@@ -153,13 +153,15 @@ function StatCard({ label, value }: { label: string; value: number }) {
   )
 }
 
+const BIOMES = ['Amazônia', 'Caatinga', 'Cerrado', 'Mata Atlântica', 'Pampa', 'Pantanal']
+
 function SettlementsTab() {
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<number | 'new' | null>(null)
   const [name, setName] = useState('')
   const [municipality, setMunicipality] = useState('')
-  const [biome, setBiome] = useState('')
+  const [selectedBiomes, setSelectedBiomes] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
@@ -169,40 +171,45 @@ function SettlementsTab() {
 
   useEffect(() => { loadSettlements() }, [])
 
+  const toggleBiome = (b: string) => {
+    setSelectedBiomes((prev) => prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b])
+  }
+
   const startEdit = (s: Settlement) => {
     setEditingId(s.id)
     setName(s.name)
     setMunicipality(s.municipality)
-    setBiome(s.biome)
+    setSelectedBiomes(s.biome.split(', ').filter(Boolean))
   }
 
   const startNew = () => {
     setEditingId('new')
     setName('')
     setMunicipality('')
-    setBiome('')
+    setSelectedBiomes([])
   }
 
   const cancel = () => {
     setEditingId(null)
     setName('')
     setMunicipality('')
-    setBiome('')
+    setSelectedBiomes([])
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (selectedBiomes.length === 0) return
     setSaving(true)
     try {
       if (editingId === 'new') {
         await apiFetch('/admin/settlements', {
           method: 'POST',
-          body: JSON.stringify({ name, municipality, biome }),
+          body: JSON.stringify({ name, municipality, biome: selectedBiomes.join(', ') }),
         })
       } else {
         await apiFetch(`/admin/settlements/${editingId}`, {
           method: 'PUT',
-          body: JSON.stringify({ name, municipality, biome }),
+          body: JSON.stringify({ name, municipality, biome: selectedBiomes.join(', ') }),
         })
       }
       cancel()
@@ -259,15 +266,29 @@ function SettlementsTab() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bioma</label>
-            <input
-              type="text"
-              value={biome}
-              onChange={(e) => setBiome(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Ex: Pantanal"
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bioma(s)</label>
+            <div className="grid grid-cols-2 gap-2">
+              {BIOMES.map((b) => {
+                const selected = selectedBiomes.includes(b)
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => toggleBiome(b)}
+                    className={`text-left px-3 py-2 rounded-xl border text-sm font-medium transition-all active:scale-[0.98] ${
+                      selected
+                        ? 'border-green-500 bg-green-50 text-green-800'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    {selected ? '✓ ' : ''}{b}
+                  </button>
+                )
+              })}
+            </div>
+            {selectedBiomes.length === 0 && (
+              <p className="text-xs text-red-500 mt-1">Selecione pelo menos um bioma</p>
+            )}
           </div>
           <div className="flex gap-2">
             <button

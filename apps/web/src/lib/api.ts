@@ -2,19 +2,24 @@ const API_BASE = '/api'
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('resa_token')
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  if (options.body && typeof options.body === 'string') {
+    headers['Content-Type'] = 'application/json'
+  }
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
+      ...headers,
+      ...(options.headers as Record<string, string>),
     },
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error || `API error ${res.status}`)
   }
-  return res.json()
+  const text = await res.text()
+  return text ? JSON.parse(text) : ({} as T)
 }
 
 export async function login(email: string, password: string) {

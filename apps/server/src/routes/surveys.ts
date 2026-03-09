@@ -50,6 +50,33 @@ export async function surveyRoutes(app: FastifyInstance) {
     return { ...survey, responses: surveyResponses }
   })
 
+  app.post('/api/admin/surveys', { preHandler: [app.requireAdmin] }, async (request, reply) => {
+    const body = z.object({
+      settlementId: z.number(),
+      interviewerId: z.number(),
+      lotNumber: z.string().optional(),
+    }).parse(request.body)
+
+    const [created] = await db.insert(surveys).values({
+      settlementId: body.settlementId,
+      interviewerId: body.interviewerId,
+      lotNumber: body.lotNumber ?? null,
+      status: 'draft',
+    }).returning()
+
+    return reply.status(201).send(created)
+  })
+
+  app.delete<{ Params: { id: string } }>('/api/admin/surveys/:id', { preHandler: [app.requireAdmin] }, async (request, reply) => {
+    const id = Number(request.params.id)
+    await db.delete(responses).where(eq(responses.surveyId, id))
+    const [deleted] = await db.delete(surveys).where(eq(surveys.id, id)).returning()
+    if (!deleted) {
+      return reply.status(404).send({ error: 'Survey not found' })
+    }
+    return { success: true }
+  })
+
   app.post('/api/sync', { preHandler: [app.authenticate] }, async (request, reply) => {
     const body = syncPayloadSchema.parse(request.body)
     const syncedIds: number[] = []

@@ -22,13 +22,14 @@ interface UserInfo {
 interface SurveyOverview {
   id: number
   settlementId: number
+  interviewerId: number
   lotNumber: string | null
   status: string
   createdAt: string
   completedAt: string | null
 }
 
-type Tab = 'overview' | 'settlements' | 'users'
+type Tab = 'overview' | 'surveys' | 'settlements' | 'users'
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
@@ -50,7 +51,8 @@ export default function AdminDashboardPage() {
   const [tab, setTab] = useState<Tab>('overview')
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'overview', label: 'Visão Geral' },
+    { key: 'overview', label: 'Geral' },
+    { key: 'surveys', label: 'Questionários' },
     { key: 'settlements', label: 'Assentamentos' },
     { key: 'users', label: 'Usuários' },
   ]
@@ -112,6 +114,7 @@ export default function AdminDashboardPage() {
             transition={{ duration: 0.2 }}
           >
             {tab === 'overview' && <OverviewTab />}
+            {tab === 'surveys' && <SurveysTab />}
             {tab === 'settlements' && <SettlementsTab />}
             {tab === 'users' && <UsersTab />}
           </motion.div>
@@ -124,15 +127,18 @@ export default function AdminDashboardPage() {
 function OverviewTab() {
   const [surveys, setSurveys] = useState<SurveyOverview[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [users, setUsers] = useState<UserInfo[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       apiFetch<SurveyOverview[]>('/surveys'),
       apiFetch<Settlement[]>('/settlements'),
-    ]).then(([s, st]) => {
+      apiFetch<UserInfo[]>('/admin/users'),
+    ]).then(([s, st, u]) => {
       setSurveys(s)
       setSettlements(st)
+      setUsers(u)
     }).finally(() => setLoading(false))
   }, [])
 
@@ -142,11 +148,12 @@ function OverviewTab() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {[
           { label: 'Questionários', value: surveys.length, color: 'text-apple-blue' },
           { label: 'Sincronizados', value: synced, color: 'text-apple-green' },
           { label: 'Assentamentos', value: settlements.length, color: 'text-apple-orange' },
+          { label: 'Usuários', value: users.length, color: 'text-apple-purple' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -197,6 +204,245 @@ function OverviewTab() {
                   }`}>
                     {s.status === 'synced' ? 'Sincronizado' : s.status}
                   </span>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const statusLabels: Record<string, string> = {
+  draft: 'Rascunho',
+  in_progress: 'Em andamento',
+  completed: 'Concluído',
+  synced: 'Sincronizado',
+}
+
+const statusStyles: Record<string, string> = {
+  draft: 'bg-apple-secondary/10 text-apple-secondary',
+  in_progress: 'bg-apple-orange/12 text-apple-orange',
+  completed: 'bg-apple-blue/12 text-apple-blue',
+  synced: 'bg-apple-green/12 text-apple-green',
+}
+
+function SurveysTab() {
+  const [surveys, setSurveys] = useState<SurveyOverview[]>([])
+  const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [users, setUsers] = useState<UserInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [settlementId, setSettlementId] = useState<number | ''>('')
+  const [interviewerId, setInterviewerId] = useState<number | ''>('')
+  const [lotNumber, setLotNumber] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+
+  const loadAll = () => {
+    Promise.all([
+      apiFetch<SurveyOverview[]>('/surveys'),
+      apiFetch<Settlement[]>('/settlements'),
+      apiFetch<UserInfo[]>('/admin/users'),
+    ]).then(([s, st, u]) => {
+      setSurveys(s)
+      setSettlements(st)
+      setUsers(u)
+    }).finally(() => setLoading(false))
+  }
+
+  useEffect(() => { loadAll() }, [])
+
+  const interviewers = users.filter(u => u.role === 'interviewer' || u.role === 'admin')
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!settlementId || !interviewerId) return
+    setSaving(true)
+    try {
+      await apiFetch('/admin/surveys', {
+        method: 'POST',
+        body: JSON.stringify({ settlementId, interviewerId, lotNumber: lotNumber || undefined }),
+      })
+      setSettlementId('')
+      setInterviewerId('')
+      setLotNumber('')
+      setShowForm(false)
+      loadAll()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    await apiFetch(`/admin/surveys/${id}`, { method: 'DELETE' })
+    setConfirmDeleteId(null)
+    loadAll()
+  }
+
+  if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
+
+  return (
+    <div className="space-y-4">
+      <AnimatePresence mode="wait">
+        {!showForm ? (
+          <motion.div key="add-btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowForm(true)}
+              disabled={settlements.length === 0 || interviewers.length === 0}
+              className="flex items-center justify-center gap-2 w-full bg-apple-green text-white rounded-2xl py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(52,199,89,0.25)] disabled:opacity-40"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+              Novo Questionário
+            </motion.button>
+            {settlements.length === 0 && (
+              <p className="text-[12px] text-apple-red mt-2 px-1">Cadastre um assentamento antes de criar questionários.</p>
+            )}
+          </motion.div>
+        ) : (
+          <motion.form
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            onSubmit={handleCreate}
+            className="space-y-4"
+          >
+            <h2 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1">Novo Questionário</h2>
+
+            <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-1">Assentamento</label>
+                <select
+                  value={settlementId}
+                  onChange={(e) => setSettlementId(Number(e.target.value))}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {settlements.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} — {s.municipality}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="h-px bg-apple-separator mx-4" />
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-1">Entrevistador</label>
+                <select
+                  value={interviewerId}
+                  onChange={(e) => setInterviewerId(Number(e.target.value))}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {interviewers.map((u) => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="h-px bg-apple-separator mx-4" />
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Número do Lote</label>
+                <input
+                  type="text"
+                  value={lotNumber}
+                  onChange={(e) => setLotNumber(e.target.value)}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                  placeholder="Ex: 42 (opcional)"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <motion.button
+                type="submit"
+                disabled={saving || !settlementId || !interviewerId}
+                whileTap={{ scale: 0.97 }}
+                className="flex-1 bg-apple-green text-white rounded-[14px] py-[13px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
+              >
+                {saving ? 'Criando...' : 'Criar Questionário'}
+              </motion.button>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowForm(false)}
+                className="px-6 rounded-[14px] py-[13px] text-[17px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+              >
+                Cancelar
+              </motion.button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      {surveys.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="w-12 h-12 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868B" strokeWidth="1.5">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+            </svg>
+          </div>
+          <p className="text-[15px] text-apple-secondary">Nenhum questionário ainda.</p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {surveys.map((s, i) => {
+            const settlement = settlements.find(st => st.id === s.settlementId)
+            const interviewer = users.find(u => u.id === s.interviewerId)
+            return (
+              <motion.div
+                key={s.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold text-apple-text truncate">
+                      {settlement?.name ?? `#${s.settlementId}`}
+                      {s.lotNumber ? ` · Lote ${s.lotNumber}` : ''}
+                    </p>
+                    <p className="text-[13px] text-apple-secondary mt-0.5">
+                      {interviewer?.name ?? `Usuário #${s.interviewerId}`} · {new Date(s.createdAt).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-3">
+                    <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap ${statusStyles[s.status] ?? statusStyles.draft}`}>
+                      {statusLabels[s.status] ?? s.status}
+                    </span>
+                    {confirmDeleteId === s.id ? (
+                      <div className="flex gap-1.5">
+                        <motion.button
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => handleDelete(s.id)}
+                          className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red text-white"
+                        >
+                          Sim
+                        </motion.button>
+                        <motion.button
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-text/5 text-apple-text"
+                        >
+                          Não
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => setConfirmDeleteId(s.id)}
+                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                      >
+                        Excluir
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )

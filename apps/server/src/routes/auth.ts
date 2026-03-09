@@ -59,4 +59,26 @@ export async function authRoutes(app: FastifyInstance) {
     }).from(users).where(eq(users.id, id))
     return user
   })
+
+  app.get('/api/admin/users', { preHandler: [app.requireAdmin] }, async () => {
+    return db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      createdAt: users.createdAt,
+    }).from(users)
+  })
+
+  app.delete<{ Params: { id: string } }>('/api/admin/users/:id', { preHandler: [app.requireAdmin] }, async (request, reply) => {
+    const id = Number(request.params.id)
+    if (id === request.user.id) {
+      return reply.status(400).send({ error: 'Não é possível excluir o próprio usuário' })
+    }
+    const [deleted] = await db.delete(users).where(eq(users.id, id)).returning()
+    if (!deleted) {
+      return reply.status(404).send({ error: 'User not found' })
+    }
+    return { success: true }
+  })
 }

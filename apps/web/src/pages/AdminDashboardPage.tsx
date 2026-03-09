@@ -10,6 +10,14 @@ interface Settlement {
   biome: string
 }
 
+interface UserInfo {
+  id: number
+  name: string
+  email: string
+  role: string
+  createdAt: string
+}
+
 interface SurveyOverview {
   id: number
   settlementId: number
@@ -20,6 +28,12 @@ interface SurveyOverview {
 }
 
 type Tab = 'overview' | 'settlements' | 'users'
+
+const roleLabels: Record<string, string> = {
+  admin: 'Administrador',
+  interviewer: 'Entrevistador',
+  viewer: 'Visualizador',
+}
 
 export default function AdminDashboardPage() {
   const { user, logout } = useAuth()
@@ -89,7 +103,6 @@ function OverviewTab() {
   if (loading) return <p className="text-center text-gray-400 py-8">Carregando...</p>
 
   const synced = surveys.filter(s => s.status === 'synced').length
-  const completed = surveys.filter(s => s.status === 'completed').length
 
   return (
     <div className="space-y-4">
@@ -143,11 +156,12 @@ function StatCard({ label, value }: { label: string; value: number }) {
 function SettlementsTab() {
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<number | 'new' | null>(null)
   const [name, setName] = useState('')
   const [municipality, setMunicipality] = useState('')
   const [biome, setBiome] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   const loadSettlements = () => {
     apiFetch<Settlement[]>('/settlements').then(setSettlements).finally(() => setLoading(false))
@@ -155,18 +169,43 @@ function SettlementsTab() {
 
   useEffect(() => { loadSettlements() }, [])
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const startEdit = (s: Settlement) => {
+    setEditingId(s.id)
+    setName(s.name)
+    setMunicipality(s.municipality)
+    setBiome(s.biome)
+  }
+
+  const startNew = () => {
+    setEditingId('new')
+    setName('')
+    setMunicipality('')
+    setBiome('')
+  }
+
+  const cancel = () => {
+    setEditingId(null)
+    setName('')
+    setMunicipality('')
+    setBiome('')
+  }
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     try {
-      await apiFetch('/admin/settlements', {
-        method: 'POST',
-        body: JSON.stringify({ name, municipality, biome }),
-      })
-      setName('')
-      setMunicipality('')
-      setBiome('')
-      setShowForm(false)
+      if (editingId === 'new') {
+        await apiFetch('/admin/settlements', {
+          method: 'POST',
+          body: JSON.stringify({ name, municipality, biome }),
+        })
+      } else {
+        await apiFetch(`/admin/settlements/${editingId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ name, municipality, biome }),
+        })
+      }
+      cancel()
       loadSettlements()
     } finally {
       setSaving(false)
@@ -175,6 +214,7 @@ function SettlementsTab() {
 
   const handleDelete = async (id: number) => {
     await apiFetch(`/admin/settlements/${id}`, { method: 'DELETE' })
+    setConfirmDeleteId(null)
     loadSettlements()
   }
 
@@ -182,15 +222,20 @@ function SettlementsTab() {
 
   return (
     <div className="space-y-4">
-      <button
-        onClick={() => setShowForm(!showForm)}
-        className="w-full bg-green-600 text-white text-center rounded-2xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm"
-      >
-        {showForm ? 'Cancelar' : '+ Novo Assentamento'}
-      </button>
+      {editingId === null && (
+        <button
+          onClick={startNew}
+          className="w-full bg-green-600 text-white text-center rounded-2xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm"
+        >
+          + Novo Assentamento
+        </button>
+      )}
 
-      {showForm && (
-        <form onSubmit={handleAdd} className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
+      {editingId !== null && (
+        <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
+          <h2 className="text-base font-medium text-gray-900">
+            {editingId === 'new' ? 'Novo Assentamento' : 'Editar Assentamento'}
+          </h2>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
             <input
@@ -224,32 +269,68 @@ function SettlementsTab() {
               required
             />
           </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
-          >
-            {saving ? 'Salvando...' : 'Salvar'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+            <button
+              type="button"
+              onClick={cancel}
+              className="px-6 rounded-xl py-3 text-base font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
         </form>
       )}
 
-      {settlements.length === 0 ? (
+      {settlements.length === 0 && editingId === null ? (
         <p className="text-center text-gray-400 py-8">Nenhum assentamento cadastrado.</p>
       ) : (
         <div className="space-y-3">
           {settlements.map((s) => (
-            <div key={s.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">{s.name}</p>
-                <p className="text-sm text-gray-500">{s.municipality} · {s.biome}</p>
+            <div key={s.id} className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">{s.name}</p>
+                  <p className="text-sm text-gray-500">{s.municipality} · {s.biome}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => startEdit(s)}
+                    className="text-sm px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  >
+                    Editar
+                  </button>
+                  {confirmDeleteId === s.id ? (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        className="text-sm px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-sm px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        Não
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(s.id)}
+                      className="text-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      Excluir
+                    </button>
+                  )}
+                </div>
               </div>
-              <button
-                onClick={() => handleDelete(s.id)}
-                className="text-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-              >
-                Excluir
-              </button>
             </div>
           ))}
         </div>
@@ -259,12 +340,23 @@ function SettlementsTab() {
 }
 
 function UsersTab() {
+  const { user: currentUser } = useAuth()
+  const [userList, setUserList] = useState<UserInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'interviewer' | 'viewer'>('interviewer')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+
+  const loadUsers = () => {
+    apiFetch<UserInfo[]>('/admin/users').then(setUserList).finally(() => setLoading(false))
+  }
+
+  useEffect(() => { loadUsers() }, [])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -279,6 +371,8 @@ function UsersTab() {
       setName('')
       setEmail('')
       setPassword('')
+      setShowForm(false)
+      loadUsers()
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Erro ao criar usuário')
     } finally {
@@ -286,67 +380,147 @@ function UsersTab() {
     }
   }
 
+  const handleDelete = async (id: number) => {
+    try {
+      await apiFetch(`/admin/users/${id}`, { method: 'DELETE' })
+      setConfirmDeleteId(null)
+      loadUsers()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Erro ao excluir usuário')
+    }
+  }
+
+  if (loading) return <p className="text-center text-gray-400 py-8">Carregando...</p>
+
   return (
     <div className="space-y-4">
-      <form onSubmit={handleRegister} className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-        <h2 className="text-base font-medium text-gray-900">Cadastrar Novo Usuário</h2>
-        {message && (
-          <div className={`text-sm rounded-xl p-3 ${message.includes('sucesso') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-            {message}
-          </div>
-        )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="Nome completo"
-            required
-          />
+      {message && (
+        <div className={`text-sm rounded-xl p-3 ${message.includes('sucesso') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+          {message}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="email@exemplo.com"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="******"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as 'interviewer' | 'viewer')}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            <option value="interviewer">Entrevistador</option>
-            <option value="viewer">Visualizador</option>
-          </select>
-        </div>
+      )}
+
+      {!showForm && (
         <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
+          onClick={() => { setShowForm(true); setMessage('') }}
+          className="w-full bg-green-600 text-white text-center rounded-2xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm"
         >
-          {saving ? 'Cadastrando...' : 'Cadastrar Usuário'}
+          + Novo Usuário
         </button>
-      </form>
+      )}
+
+      {showForm && (
+        <form onSubmit={handleRegister} className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
+          <h2 className="text-base font-medium text-gray-900">Cadastrar Novo Usuário</h2>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Nome completo"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="email@exemplo.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="******"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as 'interviewer' | 'viewer')}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="interviewer">Entrevistador</option>
+              <option value="viewer">Visualizador</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              {saving ? 'Cadastrando...' : 'Cadastrar'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="px-6 rounded-xl py-3 text-base font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="space-y-3">
+        {userList.map((u) => (
+          <div key={u.id} className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">{u.name}</p>
+                <p className="text-sm text-gray-500">{u.email}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                  u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                  u.role === 'interviewer' ? 'bg-blue-100 text-blue-700' :
+                  'bg-gray-100 text-gray-600'
+                }`}>
+                  {roleLabels[u.role] ?? u.role}
+                </span>
+                {u.id !== currentUser?.id && (
+                  confirmDeleteId === u.id ? (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleDelete(u.id)}
+                        className="text-sm px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-sm px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        Não
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(u.id)}
+                      className="text-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      Excluir
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

@@ -59,66 +59,80 @@ const roleStyles: Record<string, string> = {
 
 const BIOMES = ['Amazônia', 'Cerrado', 'Pantanal']
 
+const tabConfig: { key: Tab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
+  {
+    key: 'overview',
+    label: 'Geral',
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+    ),
+  },
+  {
+    key: 'questions',
+    label: 'Perguntas',
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+        <rect x="9" y="3" width="6" height="4" rx="1" />
+        <path d="M9 12h6M9 16h4" />
+      </svg>
+    ),
+  },
+  {
+    key: 'settlements',
+    label: 'Locais',
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+        <circle cx="12" cy="9" r="2.5" />
+      </svg>
+    ),
+  },
+  {
+    key: 'users',
+    label: 'Usuários',
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="10" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+]
+
 export default function AdminDashboardPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('overview')
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'overview', label: 'Geral' },
-    { key: 'questions', label: 'Perguntas' },
-    { key: 'settlements', label: 'Assentamentos' },
-    { key: 'users', label: 'Usuários' },
-  ]
-
-  const activeIndex = tabs.findIndex(t => t.key === tab)
-
   return (
-    <div className="min-h-screen bg-apple-bg">
-      {/* Glass header */}
-      <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border">
+    <div className="min-h-dvh bg-apple-bg flex flex-col">
+      {/* Header */}
+      <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border safe-top">
         <div className="max-w-2xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <div>
-            <h1 className="text-[20px] font-bold text-apple-text tracking-tight">RESA Admin</h1>
+            <h1 className="text-[22px] font-bold text-apple-text tracking-tight">RESA Admin</h1>
             <p className="text-[13px] text-apple-secondary">{user?.name}</p>
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => { logout(); navigate('/login') }}
-            className="text-[14px] font-semibold px-3.5 py-[7px] rounded-full bg-apple-text/5 text-apple-secondary hover:bg-apple-text/8 transition-colors"
+            className="text-[14px] font-semibold h-9 px-4 rounded-full bg-apple-text/5 text-apple-secondary hover:bg-apple-text/8 transition-colors"
           >
             Sair
           </motion.button>
         </div>
-
-        {/* Segmented control */}
-        <div className="max-w-2xl mx-auto px-5 pb-3">
-          <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
-            <motion.div
-              className="absolute top-[2px] bottom-[2px] bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
-              initial={false}
-              animate={{
-                width: `calc(${100 / tabs.length}% - 2px)`,
-                left: `calc(${(activeIndex * 100) / tabs.length}% + 1px)`,
-              }}
-              transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-            />
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`relative z-10 flex-1 text-[13px] font-semibold py-[7px] rounded-[8px] transition-colors duration-200 ${
-                  tab === t.key ? 'text-apple-text' : 'text-apple-secondary'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 py-6">
+      {/* Content with bottom padding for tab bar */}
+      <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-5 pb-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -134,6 +148,28 @@ export default function AdminDashboardPage() {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Bottom Tab Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-apple-glass backdrop-blur-2xl border-t border-apple-glass-border z-20">
+        <div className="max-w-2xl mx-auto flex safe-bottom">
+          {tabConfig.map((t) => {
+            const isActive = tab === t.key
+            return (
+              <motion.button
+                key={t.key}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => setTab(t.key)}
+                className={`flex-1 flex flex-col items-center pt-2 pb-1.5 gap-0.5 transition-colors ${
+                  isActive ? 'text-apple-green' : 'text-apple-secondary'
+                }`}
+              >
+                {t.icon(isActive)}
+                <span className="text-[10px] font-semibold">{t.label}</span>
+              </motion.button>
+            )
+          })}
+        </div>
+      </nav>
     </div>
   )
 }
@@ -184,13 +220,13 @@ function OverviewTab() {
 
       {surveys.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-12 h-12 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-3">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868B" strokeWidth="1.5">
+          <div className="w-14 h-14 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#808086" strokeWidth="1.5">
               <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
               <rect x="9" y="3" width="6" height="4" rx="1"/>
             </svg>
           </div>
-          <p className="text-[15px] text-apple-secondary">Nenhum questionário sincronizado ainda.</p>
+          <p className="text-[16px] font-medium text-apple-secondary">Nenhum questionário sincronizado ainda.</p>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -299,14 +335,13 @@ function QuestionsTab() {
 
   return (
     <div className="space-y-4">
-      {/* Stats */}
       <div className="flex items-center justify-between px-1">
         <p className="text-[13px] text-apple-secondary">
-          <span className="font-semibold text-apple-text">{activeCount}</span> perguntas ativas de <span className="font-semibold text-apple-text">{questions.length}</span> total
+          <span className="font-semibold text-apple-text">{activeCount}</span> ativas de <span className="font-semibold text-apple-text">{questions.length}</span>
         </p>
       </div>
 
-      {/* Section filter */}
+      {/* Section filter - scrollable on mobile */}
       <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
         <motion.div
           className="absolute top-[2px] bottom-[2px] bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
@@ -321,7 +356,7 @@ function QuestionsTab() {
           <button
             key={s}
             onClick={() => setFilterSection(s)}
-            className={`relative z-10 flex-1 text-[12px] font-semibold py-[7px] rounded-[8px] transition-colors duration-200 ${
+            className={`relative z-10 flex-1 text-[12px] font-semibold py-2 rounded-[8px] transition-colors duration-200 ${
               filterSection === s ? 'text-apple-text' : 'text-apple-secondary'
             }`}
           >
@@ -330,7 +365,6 @@ function QuestionsTab() {
         ))}
       </div>
 
-      {/* Questions list */}
       <div className="space-y-2">
         {filtered.map((q, i) => (
           <motion.div
@@ -347,7 +381,7 @@ function QuestionsTab() {
                 <textarea
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  className="w-full bg-apple-bg rounded-xl px-4 py-3 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 min-h-[60px] transition-shadow"
+                  className="w-full bg-apple-bg rounded-xl px-4 py-3 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 min-h-[80px] transition-shadow"
                   autoFocus
                 />
                 <div className="flex gap-2">
@@ -355,14 +389,14 @@ function QuestionsTab() {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleSave(q.id)}
                     disabled={saving || !editText.trim()}
-                    className="text-[13px] font-semibold px-4 py-[6px] rounded-full bg-apple-green text-white disabled:opacity-40"
+                    className="text-[14px] font-semibold h-9 px-5 rounded-full bg-apple-green text-white disabled:opacity-40"
                   >
                     {saving ? 'Salvando...' : 'Salvar'}
                   </motion.button>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setEditingId(null)}
-                    className="text-[13px] font-semibold px-4 py-[6px] rounded-full bg-apple-text/5 text-apple-text"
+                    className="text-[14px] font-semibold h-9 px-5 rounded-full bg-apple-text/5 text-apple-text"
                   >
                     Cancelar
                   </motion.button>
@@ -370,15 +404,15 @@ function QuestionsTab() {
               </div>
             ) : (
               <>
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-[12px] font-bold text-apple-green">Q{q.number}</span>
-                      <span className="text-[11px] font-semibold px-2 py-[1px] rounded-full bg-apple-text/5 text-apple-secondary">
+                      <span className="text-[11px] font-semibold px-2 py-[2px] rounded-full bg-apple-text/5 text-apple-secondary">
                         {typeLabels[q.type] ?? q.type}
                       </span>
                       {filterSection === 'all' && (
-                        <span className="text-[11px] font-semibold px-2 py-[1px] rounded-full bg-apple-blue/8 text-apple-blue">
+                        <span className="text-[11px] font-semibold px-2 py-[2px] rounded-full bg-apple-blue/8 text-apple-blue">
                           {sectionLabels[q.section]}
                         </span>
                       )}
@@ -394,53 +428,54 @@ function QuestionsTab() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {q.active ? (
-                      <>
-                        <motion.button
-                          whileTap={{ scale: 0.92 }}
-                          onClick={() => startEdit(q)}
-                          className="text-[12px] font-semibold px-2.5 py-[4px] rounded-full bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
-                        >
-                          Editar
-                        </motion.button>
-                        {confirmDeleteId === q.id ? (
-                          <div className="flex gap-1">
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
-                              onClick={() => handleDelete(q.id)}
-                              className="text-[12px] font-semibold px-2.5 py-[4px] rounded-full bg-apple-red text-white"
-                            >
-                              Sim
-                            </motion.button>
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="text-[12px] font-semibold px-2.5 py-[4px] rounded-full bg-apple-text/5 text-apple-text"
-                            >
-                              Não
-                            </motion.button>
-                          </div>
-                        ) : (
-                          <motion.button
-                            whileTap={{ scale: 0.92 }}
-                            onClick={() => setConfirmDeleteId(q.id)}
-                            className="text-[12px] font-semibold px-2.5 py-[4px] rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
-                          >
-                            Excluir
-                          </motion.button>
-                        )}
-                      </>
-                    ) : (
+                </div>
+                {/* Action buttons - mobile-friendly row */}
+                <div className="flex gap-2 mt-3 pt-3 border-t border-apple-separator">
+                  {q.active ? (
+                    <>
                       <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => handleRestore(q.id)}
-                        className="text-[12px] font-semibold px-2.5 py-[4px] rounded-full bg-apple-green/10 text-apple-green"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => startEdit(q)}
+                        className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
                       >
-                        Reativar
+                        Editar
                       </motion.button>
-                    )}
-                  </div>
+                      {confirmDeleteId === q.id ? (
+                        <div className="flex gap-1.5">
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleDelete(q.id)}
+                            className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red text-white"
+                          >
+                            Confirmar
+                          </motion.button>
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text"
+                          >
+                            Não
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setConfirmDeleteId(q.id)}
+                          className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                        >
+                          Excluir
+                        </motion.button>
+                      )}
+                    </>
+                  ) : (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleRestore(q.id)}
+                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-green/10 text-apple-green"
+                    >
+                      Reativar
+                    </motion.button>
+                  )}
                 </div>
               </>
             )}
@@ -531,7 +566,7 @@ function SettlementsTab() {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={startNew}
-              className="flex items-center justify-center gap-2 w-full bg-apple-green text-white rounded-2xl py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(52,199,89,0.25)]"
+              className="flex items-center justify-center gap-2 w-full bg-apple-green text-white rounded-2xl py-4 text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(34,163,82,0.25)]"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
@@ -552,10 +587,9 @@ function SettlementsTab() {
               {editingId === 'new' ? 'Novo Assentamento' : 'Editar Assentamento'}
             </h2>
 
-            {/* Grouped inputs */}
             <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
-              <div className="px-4 pt-3 pb-2.5">
-                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Nome</label>
+              <div className="px-4 pt-3.5 pb-3">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-1">Nome</label>
                 <input
                   type="text"
                   value={name}
@@ -566,8 +600,8 @@ function SettlementsTab() {
                 />
               </div>
               <div className="h-px bg-apple-separator mx-4" />
-              <div className="px-4 pt-3 pb-2.5">
-                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Município</label>
+              <div className="px-4 pt-3.5 pb-3">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-1">Município</label>
                 <input
                   type="text"
                   value={municipality}
@@ -579,7 +613,6 @@ function SettlementsTab() {
               </div>
             </div>
 
-            {/* Biome selection */}
             <div>
               <h3 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1 mb-2">Bioma(s)</h3>
               <div className="flex gap-2">
@@ -591,9 +624,9 @@ function SettlementsTab() {
                       type="button"
                       whileTap={{ scale: 0.95 }}
                       onClick={() => toggleBiome(b)}
-                      className={`flex-1 py-2.5 rounded-xl text-[14px] font-semibold transition-all ${
+                      className={`flex-1 py-3 rounded-xl text-[14px] font-semibold transition-all ${
                         selected
-                          ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(52,199,89,0.25)]'
+                          ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(34,163,82,0.25)]'
                           : 'bg-apple-card text-apple-text shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]'
                       }`}
                     >
@@ -612,7 +645,7 @@ function SettlementsTab() {
                 type="submit"
                 disabled={saving}
                 whileTap={{ scale: 0.97 }}
-                className="flex-1 bg-apple-green text-white rounded-[14px] py-[13px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
+                className="flex-1 bg-apple-green text-white rounded-2xl py-3.5 text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
               >
                 {saving ? 'Salvando...' : 'Salvar'}
               </motion.button>
@@ -620,7 +653,7 @@ function SettlementsTab() {
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={cancel}
-                className="px-6 rounded-[14px] py-[13px] text-[17px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+                className="px-6 rounded-2xl py-3.5 text-[17px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
               >
                 Cancelar
               </motion.button>
@@ -631,13 +664,13 @@ function SettlementsTab() {
 
       {settlements.length === 0 && editingId === null ? (
         <div className="text-center py-12">
-          <div className="w-12 h-12 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-3">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868B" strokeWidth="1.5">
-              <path d="M3 21h18M3 7v14M21 7v14M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/>
-              <path d="M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4"/>
+          <div className="w-14 h-14 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#808086" strokeWidth="1.5">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
             </svg>
           </div>
-          <p className="text-[15px] text-apple-secondary">Nenhum assentamento cadastrado.</p>
+          <p className="text-[16px] font-medium text-apple-secondary">Nenhum assentamento cadastrado.</p>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -649,46 +682,44 @@ function SettlementsTab() {
               transition={{ delay: i * 0.03 }}
               className="bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]"
             >
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold text-apple-text">{s.name}</p>
-                  <p className="text-[13px] text-apple-secondary mt-0.5">{s.municipality} · {s.biome}</p>
-                </div>
-                <div className="flex items-center gap-2 ml-3">
-                  <motion.button
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => startEdit(s)}
-                    className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
-                  >
-                    Editar
-                  </motion.button>
-                  {confirmDeleteId === s.id ? (
-                    <div className="flex gap-1.5">
-                      <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => handleDelete(s.id)}
-                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red text-white"
-                      >
-                        Sim
-                      </motion.button>
-                      <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-text/5 text-apple-text"
-                      >
-                        Não
-                      </motion.button>
-                    </div>
-                  ) : (
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold text-apple-text">{s.name}</p>
+                <p className="text-[13px] text-apple-secondary mt-0.5">{s.municipality} · {s.biome}</p>
+              </div>
+              <div className="flex gap-2 mt-3 pt-3 border-t border-apple-separator">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => startEdit(s)}
+                  className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+                >
+                  Editar
+                </motion.button>
+                {confirmDeleteId === s.id ? (
+                  <div className="flex gap-1.5">
                     <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => setConfirmDeleteId(s.id)}
-                      className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleDelete(s.id)}
+                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red text-white"
                     >
-                      Excluir
+                      Confirmar
                     </motion.button>
-                  )}
-                </div>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text"
+                    >
+                      Não
+                    </motion.button>
+                  </div>
+                ) : (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setConfirmDeleteId(s.id)}
+                    className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                  >
+                    Excluir
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           ))}
@@ -712,7 +743,6 @@ function UsersTab() {
   const [message, setMessage] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
-  // Settlement assignment state
   const [assignUserId, setAssignUserId] = useState<number | null>(null)
   const [assignedIds, setAssignedIds] = useState<number[]>([])
   const [savingAssign, setSavingAssign] = useState(false)
@@ -811,17 +841,20 @@ function UsersTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-5"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
             onClick={() => setAssignUserId(null)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="bg-apple-card rounded-3xl p-5 w-full max-w-md shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+              className="bg-apple-card rounded-t-3xl sm:rounded-3xl p-5 w-full sm:max-w-md shadow-[0_-4px_40px_rgba(0,0,0,0.15)] sm:shadow-[0_24px_80px_rgba(0,0,0,0.2)] safe-bottom max-h-[85dvh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Drag handle for mobile */}
+              <div className="w-10 h-1 rounded-full bg-apple-text/10 mx-auto mb-4 sm:hidden" />
+
               <h3 className="text-[17px] font-bold text-apple-text mb-1">Assentamentos Vinculados</h3>
               <p className="text-[13px] text-apple-secondary mb-4">
                 {userList.find((u) => u.id === assignUserId)?.name}
@@ -830,7 +863,7 @@ function UsersTab() {
               {allSettlements.length === 0 ? (
                 <p className="text-[14px] text-apple-tertiary text-center py-6">Nenhum assentamento cadastrado.</p>
               ) : (
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                <div className="space-y-2 flex-1 overflow-y-auto -mx-1 px-1">
                   {allSettlements.map((s) => {
                     const selected = assignedIds.includes(s.id)
                     return (
@@ -838,7 +871,7 @@ function UsersTab() {
                         key={s.id}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => toggleSettlement(s.id)}
-                        className={`w-full text-left px-4 py-3 rounded-xl transition-all text-[15px] font-medium ${
+                        className={`w-full text-left px-4 py-3.5 rounded-xl transition-all text-[15px] font-medium ${
                           selected
                             ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
                             : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
@@ -874,14 +907,14 @@ function UsersTab() {
                   whileTap={{ scale: 0.97 }}
                   onClick={saveAssignments}
                   disabled={savingAssign}
-                  className="flex-1 bg-apple-green text-white rounded-[14px] py-[12px] text-[16px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
+                  className="flex-1 bg-apple-green text-white rounded-2xl py-3.5 text-[16px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
                 >
                   {savingAssign ? 'Salvando...' : `Salvar (${assignedIds.length})`}
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setAssignUserId(null)}
-                  className="px-5 rounded-[14px] py-[12px] text-[16px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+                  className="px-5 rounded-2xl py-3.5 text-[16px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
                 >
                   Cancelar
                 </motion.button>
@@ -897,7 +930,7 @@ function UsersTab() {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => { setShowForm(true); setMessage('') }}
-              className="flex items-center justify-center gap-2 w-full bg-apple-green text-white rounded-2xl py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(52,199,89,0.25)]"
+              className="flex items-center justify-center gap-2 w-full bg-apple-green text-white rounded-2xl py-4 text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(34,163,82,0.25)]"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
@@ -916,10 +949,9 @@ function UsersTab() {
           >
             <h2 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1">Novo Usuário</h2>
 
-            {/* Grouped inputs */}
             <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
-              <div className="px-4 pt-3 pb-2.5">
-                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Nome</label>
+              <div className="px-4 pt-3.5 pb-3">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-1">Nome</label>
                 <input
                   type="text"
                   value={name}
@@ -930,8 +962,8 @@ function UsersTab() {
                 />
               </div>
               <div className="h-px bg-apple-separator mx-4" />
-              <div className="px-4 pt-3 pb-2.5">
-                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Email</label>
+              <div className="px-4 pt-3.5 pb-3">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-1">Email</label>
                 <input
                   type="email"
                   value={email}
@@ -942,8 +974,8 @@ function UsersTab() {
                 />
               </div>
               <div className="h-px bg-apple-separator mx-4" />
-              <div className="px-4 pt-3 pb-2.5">
-                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Senha</label>
+              <div className="px-4 pt-3.5 pb-3">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-1">Senha</label>
                 <input
                   type="password"
                   value={password}
@@ -955,7 +987,6 @@ function UsersTab() {
               </div>
             </div>
 
-            {/* Role segmented control */}
             <div>
               <h3 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1 mb-2">Perfil</h3>
               <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
@@ -971,7 +1002,7 @@ function UsersTab() {
                 <button
                   type="button"
                   onClick={() => setRole('interviewer')}
-                  className={`relative z-10 flex-1 text-[14px] font-semibold py-[8px] rounded-[8px] transition-colors duration-200 ${
+                  className={`relative z-10 flex-1 text-[14px] font-semibold py-2.5 rounded-[8px] transition-colors duration-200 ${
                     role === 'interviewer' ? 'text-apple-text' : 'text-apple-secondary'
                   }`}
                 >
@@ -980,7 +1011,7 @@ function UsersTab() {
                 <button
                   type="button"
                   onClick={() => setRole('viewer')}
-                  className={`relative z-10 flex-1 text-[14px] font-semibold py-[8px] rounded-[8px] transition-colors duration-200 ${
+                  className={`relative z-10 flex-1 text-[14px] font-semibold py-2.5 rounded-[8px] transition-colors duration-200 ${
                     role === 'viewer' ? 'text-apple-text' : 'text-apple-secondary'
                   }`}
                 >
@@ -994,7 +1025,7 @@ function UsersTab() {
                 type="submit"
                 disabled={saving}
                 whileTap={{ scale: 0.97 }}
-                className="flex-1 bg-apple-green text-white rounded-[14px] py-[13px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
+                className="flex-1 bg-apple-green text-white rounded-2xl py-3.5 text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
               >
                 {saving ? 'Cadastrando...' : 'Cadastrar'}
               </motion.button>
@@ -1002,7 +1033,7 @@ function UsersTab() {
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowForm(false)}
-                className="px-6 rounded-[14px] py-[13px] text-[17px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+                className="px-6 rounded-2xl py-3.5 text-[17px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
               >
                 Cancelar
               </motion.button>
@@ -1022,51 +1053,54 @@ function UsersTab() {
           >
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-semibold text-apple-text">{u.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[15px] font-semibold text-apple-text">{u.name}</p>
+                  <span className={`text-[11px] font-semibold px-2 py-[2px] rounded-full whitespace-nowrap ${roleStyles[u.role] ?? roleStyles.viewer}`}>
+                    {roleLabels[u.role] ?? u.role}
+                  </span>
+                </div>
                 <p className="text-[13px] text-apple-secondary mt-0.5">{u.email}</p>
               </div>
-              <div className="flex items-center gap-2 ml-3">
-                <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap ${roleStyles[u.role] ?? roleStyles.viewer}`}>
-                  {roleLabels[u.role] ?? u.role}
-                </span>
-                {u.role !== 'admin' && (
-                  <motion.button
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => openAssign(u.id)}
-                    className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-orange/10 text-apple-orange hover:bg-apple-orange/18 transition-colors"
-                  >
-                    Assentamentos
-                  </motion.button>
-                )}
-                {u.id !== currentUser?.id && (
-                  confirmDeleteId === u.id ? (
-                    <div className="flex gap-1.5">
-                      <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => handleDelete(u.id)}
-                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red text-white"
-                      >
-                        Sim
-                      </motion.button>
-                      <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-text/5 text-apple-text"
-                      >
-                        Não
-                      </motion.button>
-                    </div>
-                  ) : (
+            </div>
+            {/* Actions - always full row for mobile friendliness */}
+            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-apple-separator">
+              {u.role !== 'admin' && (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => openAssign(u.id)}
+                  className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-orange/10 text-apple-orange hover:bg-apple-orange/18 transition-colors"
+                >
+                  Assentamentos
+                </motion.button>
+              )}
+              {u.id !== currentUser?.id && (
+                confirmDeleteId === u.id ? (
+                  <div className="flex gap-1.5">
                     <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => setConfirmDeleteId(u.id)}
-                      className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleDelete(u.id)}
+                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red text-white"
                     >
-                      Excluir
+                      Confirmar
                     </motion.button>
-                  )
-                )}
-              </div>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text"
+                    >
+                      Não
+                    </motion.button>
+                  </div>
+                ) : (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setConfirmDeleteId(u.id)}
+                    className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                  >
+                    Excluir
+                  </motion.button>
+                )
+              )}
             </div>
           </motion.div>
         ))}

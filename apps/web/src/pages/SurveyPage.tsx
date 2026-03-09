@@ -5,6 +5,12 @@ import { db, type LocalQuestion } from '../lib/db'
 import { getQuestions } from '../lib/sync'
 
 const sectionLabels = {
+  socioeconomic: 'Socioec.',
+  behavioral: 'Comport.',
+  environmental: 'Ambiental',
+} as const
+
+const sectionFullLabels = {
   socioeconomic: 'Socioeconômico',
   behavioral: 'Comportamental',
   environmental: 'Ambiental',
@@ -78,7 +84,7 @@ export default function SurveyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-apple-bg flex items-center justify-center">
+      <div className="min-h-dvh bg-apple-bg flex items-center justify-center">
         <p className="text-[15px] text-apple-secondary">Carregando...</p>
       </div>
     )
@@ -87,7 +93,7 @@ export default function SurveyPage() {
   const activeIndex = sections.indexOf(currentSection)
 
   return (
-    <div className="min-h-screen bg-apple-bg">
+    <div className="min-h-dvh bg-apple-bg flex flex-col">
       {/* Progress bar */}
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-apple-text/5 z-50">
         <motion.div
@@ -99,21 +105,24 @@ export default function SurveyPage() {
       </div>
 
       {/* Glass header */}
-      <header className="bg-apple-glass backdrop-blur-2xl sticky top-[3px] z-10 border-b border-apple-glass-border">
+      <header className="bg-apple-glass backdrop-blur-2xl sticky top-[3px] z-10 border-b border-apple-glass-border safe-top">
         <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/')}
-            className="w-8 h-8 rounded-full bg-apple-text/5 flex items-center justify-center hover:bg-apple-text/8 transition-colors"
+            className="w-9 h-9 rounded-full bg-apple-text/5 flex items-center justify-center hover:bg-apple-text/8 transition-colors"
           >
             <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-              <path d="M7 1L1 7l6 6" stroke="#1D1D1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 1L1 7l6 6" stroke="#1B1B1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </motion.button>
-          <span className="text-[14px] font-semibold text-apple-secondary">{Math.round(progress)}% concluído</span>
+          <div className="text-center">
+            <span className="text-[13px] font-semibold text-apple-secondary">{Math.round(progress)}%</span>
+          </div>
+          <div className="w-9" /> {/* Spacer for centering */}
         </div>
 
-        {/* Apple-style segmented control */}
+        {/* Segmented control */}
         <div className="max-w-lg mx-auto px-5 pb-3">
           <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
             <motion.div
@@ -129,18 +138,19 @@ export default function SurveyPage() {
               <button
                 key={s}
                 onClick={() => setCurrentSection(s)}
-                className={`relative z-10 flex-1 text-[13px] font-semibold py-[7px] rounded-[8px] transition-colors duration-200 ${
+                className={`relative z-10 flex-1 text-[13px] font-semibold py-2 rounded-[8px] transition-colors duration-200 ${
                   currentSection === s ? 'text-apple-text' : 'text-apple-secondary'
                 }`}
               >
-                {sectionLabels[s]}
+                <span className="sm:hidden">{sectionLabels[s]}</span>
+                <span className="hidden sm:inline">{sectionFullLabels[s]}</span>
               </button>
             ))}
           </div>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-5 py-6">
+      <main className="flex-1 max-w-lg mx-auto w-full px-5 py-5 pb-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSection}
@@ -168,20 +178,18 @@ export default function SurveyPage() {
         </AnimatePresence>
 
         {currentSection === 'environmental' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-8"
-          >
+          <div className="mt-6 safe-bottom pb-4">
             <motion.button
               onClick={handleComplete}
               whileTap={{ scale: 0.97 }}
-              className="w-full bg-apple-green text-white rounded-2xl py-[16px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(52,199,89,0.25)]"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="w-full bg-apple-green text-white rounded-2xl py-4 text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(34,163,82,0.25)]"
             >
               Finalizar Questionário
             </motion.button>
-          </motion.div>
+          </div>
         )}
       </main>
     </div>
@@ -267,7 +275,7 @@ function SingleChoice({ options, value, onChange }: {
                   setTextInputs((prev) => ({ ...prev, [opt.value]: e.target.value }))
                   onChange(`${opt.value}:${e.target.value}`)
                 }}
-                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-2.5 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
+                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-3 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
                 placeholder="Especifique..."
               />
             )}
@@ -327,7 +335,7 @@ function MultipleChoice({ options, value, onChange }: {
                 type="text"
                 value={textInputs[opt.value] ?? ''}
                 onChange={(e) => setTextInputs((prev) => ({ ...prev, [opt.value]: e.target.value }))}
-                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-2.5 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
+                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-3 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
                 placeholder="Especifique..."
               />
             )}
@@ -346,7 +354,7 @@ function ScaleInput({ min, max, value, onChange }: {
 }) {
   const points = Array.from({ length: max - min + 1 }, (_, i) => min + i)
   return (
-    <div className="flex gap-2 justify-center">
+    <div className="flex gap-2 justify-center flex-wrap">
       {points.map((n) => (
         <motion.button
           key={n}
@@ -354,7 +362,7 @@ function ScaleInput({ min, max, value, onChange }: {
           onClick={() => onChange(n)}
           className={`w-12 h-12 rounded-[14px] text-[16px] font-semibold transition-all ${
             value === n
-              ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(52,199,89,0.3)]'
+              ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(34,163,82,0.3)]'
               : 'bg-apple-bg text-apple-text hover:bg-apple-text/6'
           }`}
         >

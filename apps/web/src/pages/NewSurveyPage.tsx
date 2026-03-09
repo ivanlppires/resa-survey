@@ -62,33 +62,33 @@ export default function NewSurveyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-apple-bg">
+    <div className="min-h-dvh bg-apple-bg flex flex-col">
       {/* Glass header */}
-      <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border">
+      <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border safe-top">
         <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center gap-3">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/')}
-            className="w-8 h-8 rounded-full bg-apple-text/5 flex items-center justify-center hover:bg-apple-text/8 transition-colors"
+            className="w-9 h-9 rounded-full bg-apple-text/5 flex items-center justify-center hover:bg-apple-text/8 transition-colors"
           >
             <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-              <path d="M7 1L1 7l6 6" stroke="#1D1D1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 1L1 7l6 6" stroke="#1B1B1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </motion.button>
           <h1 className="text-[20px] font-bold text-apple-text tracking-tight">Novo Questionário</h1>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-5 py-6">
+      <main className="flex-1 max-w-lg mx-auto w-full px-5 py-6">
         <motion.form
           onSubmit={handleSubmit}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
+          className="flex flex-col h-full"
         >
-          {/* Apple-style grouped inputs */}
           <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
-            <div className="px-4 pt-3 pb-2.5">
+            <div className="px-4 pt-3.5 pb-3">
               <label className="block text-[13px] font-medium text-apple-secondary mb-1">Assentamento</label>
               {settlements.length > 0 ? (
                 <select
@@ -107,8 +107,8 @@ export default function NewSurveyPage() {
               )}
             </div>
             <div className="h-px bg-apple-separator mx-4" />
-            <div className="px-4 pt-3 pb-2.5">
-              <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Número do Lote</label>
+            <div className="px-4 pt-3.5 pb-3">
+              <label className="block text-[13px] font-medium text-apple-secondary mb-1">Número do Lote</label>
               <input
                 type="text"
                 value={lotNumber}
@@ -119,17 +119,26 @@ export default function NewSurveyPage() {
               />
             </div>
           </div>
+        </motion.form>
+      </main>
 
+      {/* Bottom-anchored submit */}
+      <div className="sticky bottom-0 bg-apple-glass backdrop-blur-2xl border-t border-apple-glass-border safe-bottom">
+        <div className="max-w-lg mx-auto px-5 py-3.5">
           <motion.button
-            type="submit"
+            type="button"
+            onClick={(e) => {
+              const form = document.querySelector('form')
+              if (form) form.requestSubmit()
+            }}
             disabled={loading || !settlementId}
             whileTap={{ scale: 0.97 }}
-            className="w-full mt-5 bg-apple-green text-white rounded-[14px] py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40 shadow-[0_2px_8px_rgba(52,199,89,0.3)]"
+            className="w-full bg-apple-green text-white rounded-2xl py-4 text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40 shadow-[0_2px_8px_rgba(34,163,82,0.3)]"
           >
             {loading ? 'Criando...' : 'Iniciar Questionário'}
           </motion.button>
-        </motion.form>
-      </main>
+        </div>
+      </div>
     </div>
   )
 }

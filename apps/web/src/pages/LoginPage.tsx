@@ -26,7 +26,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-apple-bg flex items-center justify-center p-5">
+    <div className="min-h-dvh bg-apple-bg flex flex-col items-center justify-center px-6 safe-bottom">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -39,14 +39,14 @@ export default function LoginPage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="w-16 h-16 rounded-[18px] bg-apple-green/10 flex items-center justify-center mx-auto mb-5">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="w-[72px] h-[72px] rounded-[20px] bg-apple-green/10 flex items-center justify-center mx-auto mb-5">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#22A352" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
                 <path d="M8 12l2.5 2.5L16 9"/>
               </svg>
             </div>
             <h1 className="text-[34px] font-extrabold tracking-tight text-apple-text">RESA</h1>
-            <p className="text-[15px] text-apple-secondary mt-1">Pesquisa Socioeconômica e Ambiental</p>
+            <p className="text-[15px] text-apple-secondary mt-1.5">Pesquisa Socioeconômica e Ambiental</p>
           </motion.div>
         </div>
 
@@ -61,10 +61,9 @@ export default function LoginPage() {
             </motion.div>
           )}
 
-          {/* Apple-style grouped inputs */}
           <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
-            <div className="px-4 pt-3 pb-2.5">
-              <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Email</label>
+            <div className="px-4 pt-3.5 pb-3">
+              <label className="block text-[13px] font-medium text-apple-secondary mb-1">Email</label>
               <input
                 type="email"
                 value={email}
@@ -76,8 +75,8 @@ export default function LoginPage() {
               />
             </div>
             <div className="h-px bg-apple-separator mx-4" />
-            <div className="px-4 pt-3 pb-2.5">
-              <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Senha</label>
+            <div className="px-4 pt-3.5 pb-3">
+              <label className="block text-[13px] font-medium text-apple-secondary mb-1">Senha</label>
               <input
                 type="password"
                 value={password}
@@ -94,7 +93,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             whileTap={{ scale: 0.97 }}
-            className="w-full mt-5 bg-apple-green text-white rounded-[14px] py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40 shadow-[0_2px_8px_rgba(52,199,89,0.3)]"
+            className="w-full mt-5 bg-apple-green text-white rounded-2xl py-4 text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40 shadow-[0_2px_8px_rgba(34,163,82,0.3)]"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </motion.button>

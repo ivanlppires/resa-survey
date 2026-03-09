@@ -4,6 +4,7 @@ import { ZodError } from 'zod'
 import { authPlugin } from './plugins/auth.js'
 import { healthRoutes } from './routes/health.js'
 import { authRoutes } from './routes/auth.js'
+import { questionRoutes } from './routes/questions.js'
 
 const app = Fastify({ logger: true })
 
@@ -17,6 +18,7 @@ app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) =>
 await app.register(authPlugin)
 await app.register(healthRoutes)
 await app.register(authRoutes)
+await app.register(questionRoutes)
 
 const port = Number(process.env.PORT) || 3000
 const host = process.env.HOST || '0.0.0.0'

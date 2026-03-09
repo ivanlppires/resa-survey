@@ -1,14 +1,23 @@
-import type { SurveyStatus } from '@resa/shared'
-
-const status: SurveyStatus = 'draft'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
+import { AuthProvider } from './lib/auth'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import LoginPage from './pages/LoginPage'
+import SurveyListPage from './pages/SurveyListPage'
+import NewSurveyPage from './pages/NewSurveyPage'
+import SurveyPage from './pages/SurveyPage'
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-3xl font-semibold text-gray-900">RESA Survey</h1>
-        <p className="mt-2 text-gray-500">Status: {status}</p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<ProtectedRoute><SurveyListPage /></ProtectedRoute>} />
+          <Route path="/survey/new" element={<ProtectedRoute><NewSurveyPage /></ProtectedRoute>} />
+          <Route path="/survey/:localId" element={<ProtectedRoute><SurveyPage /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }

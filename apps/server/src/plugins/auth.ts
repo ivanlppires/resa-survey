@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import fjwt from '@fastify/jwt'
+import fp from 'fastify-plugin'
 
-export async function authPlugin(app: FastifyInstance) {
+async function auth(app: FastifyInstance) {
   await app.register(fjwt, {
     secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   })
@@ -26,3 +27,5 @@ export async function authPlugin(app: FastifyInstance) {
     }
   })
 }
+
+export const authPlugin = fp(auth)

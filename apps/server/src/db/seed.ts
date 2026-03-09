@@ -1,7 +1,9 @@
 import 'dotenv/config'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { questions } from './schema.js'
+import bcrypt from 'bcryptjs'
+import { eq } from 'drizzle-orm'
+import { questions, users } from './schema.js'
 
 const client = postgres(process.env.DATABASE_URL!)
 const db = drizzle({ client })
@@ -980,6 +982,21 @@ async function seed() {
   await db.insert(questions).values(questionData)
 
   console.log(`Inserted ${questionData.length} questions.`)
+
+  // Seed admin user
+  const existingAdmin = await db.select().from(users).where(eq(users.email, 'admin@resa.unemat.br'))
+  if (existingAdmin.length === 0) {
+    const passwordHash = await bcrypt.hash('admin123', 10)
+    await db.insert(users).values({
+      name: 'Admin RESA',
+      email: 'admin@resa.unemat.br',
+      passwordHash,
+      role: 'admin',
+    })
+    console.log('Created admin user: admin@resa.unemat.br')
+  } else {
+    console.log('Admin user already exists.')
+  }
 
   await client.end()
   process.exit(0)

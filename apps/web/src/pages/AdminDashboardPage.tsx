@@ -174,6 +174,68 @@ export default function AdminDashboardPage() {
   )
 }
 
+function DestructiveSheet({ open, title, message, onConfirm, onCancel }: {
+  open: boolean
+  title: string
+  message: string
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+          onClick={onCancel}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 80 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 80 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+            className="w-full sm:max-w-[340px] px-3 pb-3 safe-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Action group */}
+            <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_-2px_20px_rgba(0,0,0,0.08)]">
+              <div className="px-5 pt-5 pb-3 text-center">
+                <div className="w-11 h-11 rounded-full bg-apple-red/10 flex items-center justify-center mx-auto mb-3">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg>
+                </div>
+                <p className="text-[16px] font-bold text-apple-text">{title}</p>
+                <p className="text-[14px] text-apple-secondary mt-1 leading-snug">{message}</p>
+              </div>
+              <div className="h-px bg-apple-separator" />
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={onConfirm}
+                className="w-full py-3.5 text-[17px] font-semibold text-apple-red active:bg-apple-red/5 transition-colors"
+              >
+                Excluir
+              </motion.button>
+            </div>
+
+            {/* Cancel button - separate card */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={onCancel}
+              className="w-full mt-2 py-3.5 text-[17px] font-semibold text-apple-blue bg-apple-card rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] active:bg-apple-text/3 transition-colors"
+            >
+              Cancelar
+            </motion.button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
 function OverviewTab() {
   const [surveys, setSurveys] = useState<SurveyOverview[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
@@ -547,32 +609,13 @@ function QuestionsTab() {
                       >
                         Editar
                       </motion.button>
-                      {confirmDeleteId === q.id ? (
-                        <div className="flex gap-1.5">
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleDelete(q.id)}
-                            className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red text-white"
-                          >
-                            Confirmar
-                          </motion.button>
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setConfirmDeleteId(null)}
-                            className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text"
-                          >
-                            Não
-                          </motion.button>
-                        </div>
-                      ) : (
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setConfirmDeleteId(q.id)}
-                          className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
-                        >
-                          Excluir
-                        </motion.button>
-                      )}
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setConfirmDeleteId(q.id)}
+                        className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                      >
+                        Excluir
+                      </motion.button>
                     </>
                   ) : (
                     <motion.button
@@ -589,6 +632,14 @@ function QuestionsTab() {
           </motion.div>
         ))}
       </div>
+
+      <DestructiveSheet
+        open={confirmDeleteId !== null}
+        title="Desativar pergunta?"
+        message={`A pergunta Q${questions.find(q => q.id === confirmDeleteId)?.number ?? ''} será desativada.`}
+        onConfirm={() => { if (confirmDeleteId !== null) handleDelete(confirmDeleteId) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }
@@ -801,37 +852,26 @@ function SettlementsTab() {
                 >
                   Editar
                 </motion.button>
-                {confirmDeleteId === s.id ? (
-                  <div className="flex gap-1.5">
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleDelete(s.id)}
-                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red text-white"
-                    >
-                      Confirmar
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setConfirmDeleteId(null)}
-                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text"
-                    >
-                      Não
-                    </motion.button>
-                  </div>
-                ) : (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setConfirmDeleteId(s.id)}
-                    className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
-                  >
-                    Excluir
-                  </motion.button>
-                )}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setConfirmDeleteId(s.id)}
+                  className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                >
+                  Excluir
+                </motion.button>
               </div>
             </motion.div>
           ))}
         </div>
       )}
+
+      <DestructiveSheet
+        open={confirmDeleteId !== null}
+        title="Excluir assentamento?"
+        message={`"${settlements.find(s => s.id === confirmDeleteId)?.name ?? ''}" será removido permanentemente.`}
+        onConfirm={() => { if (confirmDeleteId !== null) handleDelete(confirmDeleteId) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }
@@ -1181,37 +1221,26 @@ function UsersTab() {
                 </motion.button>
               )}
               {u.id !== currentUser?.id && (
-                confirmDeleteId === u.id ? (
-                  <div className="flex gap-1.5">
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleDelete(u.id)}
-                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red text-white"
-                    >
-                      Confirmar
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setConfirmDeleteId(null)}
-                      className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-text/5 text-apple-text"
-                    >
-                      Não
-                    </motion.button>
-                  </div>
-                ) : (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setConfirmDeleteId(u.id)}
-                    className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
-                  >
-                    Excluir
-                  </motion.button>
-                )
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setConfirmDeleteId(u.id)}
+                  className="text-[13px] font-semibold h-8 px-4 rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
+                >
+                  Excluir
+                </motion.button>
               )}
             </div>
           </motion.div>
         ))}
       </div>
+
+      <DestructiveSheet
+        open={confirmDeleteId !== null}
+        title="Excluir usuário?"
+        message={`"${userList.find(u => u.id === confirmDeleteId)?.name ?? ''}" será removido permanentemente.`}
+        onConfirm={() => { if (confirmDeleteId !== null) handleDelete(confirmDeleteId) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }

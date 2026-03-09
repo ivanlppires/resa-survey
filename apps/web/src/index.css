@@ -1,1 +1,40 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --color-apple-bg: #F5F5F7;
+  --color-apple-card: #FFFFFF;
+  --color-apple-grouped: #F2F2F7;
+  --color-apple-text: #1D1D1F;
+  --color-apple-secondary: #86868B;
+  --color-apple-tertiary: #AEAEB2;
+  --color-apple-separator: rgba(60, 60, 67, 0.12);
+  --color-apple-green: #34C759;
+  --color-apple-green-hover: #2DB84E;
+  --color-apple-red: #FF3B30;
+  --color-apple-blue: #007AFF;
+  --color-apple-orange: #FF9500;
+  --color-apple-purple: #AF52DE;
+  --color-apple-glass: rgba(255, 255, 255, 0.72);
+  --color-apple-glass-border: rgba(0, 0, 0, 0.06);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-apple-bg);
+  color: var(--color-apple-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+::selection {
+  background: rgba(52, 199, 89, 0.2);
+}

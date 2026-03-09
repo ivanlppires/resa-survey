@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { motion } from 'framer-motion'
 import { db } from '../lib/db'
 import { apiFetch } from '../lib/api'
 
@@ -61,55 +62,73 @@ export default function NewSurveyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
-      <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-10 border-b border-gray-200/50">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="text-gray-500 hover:text-gray-900">
-            &larr; Voltar
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">Novo Questionário</h1>
+    <div className="min-h-screen bg-apple-bg">
+      {/* Glass header */}
+      <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border">
+        <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center gap-3">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigate('/')}
+            className="w-8 h-8 rounded-full bg-apple-text/5 flex items-center justify-center hover:bg-apple-text/8 transition-colors"
+          >
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+              <path d="M7 1L1 7l6 6" stroke="#1D1D1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </motion.button>
+          <h1 className="text-[20px] font-bold text-apple-text tracking-tight">Novo Questionário</h1>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6">
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assentamento</label>
-            {settlements.length > 0 ? (
-              <select
-                value={settlementId}
-                onChange={(e) => setSettlementId(Number(e.target.value))}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+      <main className="max-w-lg mx-auto px-5 py-6">
+        <motion.form
+          onSubmit={handleSubmit}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          {/* Apple-style grouped inputs */}
+          <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+            <div className="px-4 pt-3 pb-2.5">
+              <label className="block text-[13px] font-medium text-apple-secondary mb-1">Assentamento</label>
+              {settlements.length > 0 ? (
+                <select
+                  value={settlementId}
+                  onChange={(e) => setSettlementId(Number(e.target.value))}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {settlements.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} — {s.municipality}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-[15px] text-apple-tertiary py-1">Nenhum assentamento cadastrado. Peça ao admin para cadastrar.</p>
+              )}
+            </div>
+            <div className="h-px bg-apple-separator mx-4" />
+            <div className="px-4 pt-3 pb-2.5">
+              <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Número do Lote</label>
+              <input
+                type="text"
+                value={lotNumber}
+                onChange={(e) => setLotNumber(e.target.value)}
+                className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                placeholder="Ex: 42"
                 required
-              >
-                <option value="">Selecione...</option>
-                {settlements.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} &mdash; {s.municipality}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-sm text-gray-400 py-3">Nenhum assentamento cadastrado. Peça ao admin para cadastrar.</p>
-            )}
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Número do Lote</label>
-            <input
-              type="text"
-              value={lotNumber}
-              onChange={(e) => setLotNumber(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Ex: 42"
-              required
-            />
-          </div>
-          <button
+
+          <motion.button
             type="submit"
             disabled={loading || !settlementId}
-            className="w-full bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
+            whileTap={{ scale: 0.97 }}
+            className="w-full mt-5 bg-apple-green text-white rounded-[14px] py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40 shadow-[0_2px_8px_rgba(52,199,89,0.3)]"
           >
             {loading ? 'Criando...' : 'Iniciar Questionário'}
-          </button>
-        </form>
+          </motion.button>
+        </motion.form>
       </main>
     </div>
   )

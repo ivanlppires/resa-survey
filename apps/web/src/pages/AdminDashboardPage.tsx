@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../lib/auth'
 import { useNavigate } from 'react-router'
+import { motion, AnimatePresence } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 
 interface Settlement {
@@ -30,56 +31,91 @@ interface SurveyOverview {
 type Tab = 'overview' | 'settlements' | 'users'
 
 const roleLabels: Record<string, string> = {
-  admin: 'Administrador',
+  admin: 'Admin',
   interviewer: 'Entrevistador',
   viewer: 'Visualizador',
 }
+
+const roleStyles: Record<string, string> = {
+  admin: 'bg-apple-purple/12 text-apple-purple',
+  interviewer: 'bg-apple-blue/12 text-apple-blue',
+  viewer: 'bg-apple-secondary/10 text-apple-secondary',
+}
+
+const BIOMES = ['Amazônia', 'Cerrado', 'Pantanal']
 
 export default function AdminDashboardPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('overview')
 
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'overview', label: 'Visão Geral' },
+    { key: 'settlements', label: 'Assentamentos' },
+    { key: 'users', label: 'Usuários' },
+  ]
+
+  const activeIndex = tabs.findIndex(t => t.key === tab)
+
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
-      <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-10 border-b border-gray-200/50">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-apple-bg">
+      {/* Glass header */}
+      <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border">
+        <div className="max-w-2xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">RESA Admin</h1>
-            <p className="text-xs text-gray-500">{user?.name}</p>
+            <h1 className="text-[20px] font-bold text-apple-text tracking-tight">RESA Admin</h1>
+            <p className="text-[13px] text-apple-secondary">{user?.name}</p>
           </div>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={() => { logout(); navigate('/login') }}
-            className="text-sm px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            className="text-[14px] font-semibold px-3.5 py-[7px] rounded-full bg-apple-text/5 text-apple-secondary hover:bg-apple-text/8 transition-colors"
           >
             Sair
-          </button>
+          </motion.button>
         </div>
-        <div className="max-w-2xl mx-auto px-4 pb-2 flex gap-1">
-          {([
-            ['overview', 'Visão Geral'],
-            ['settlements', 'Assentamentos'],
-            ['users', 'Usuários'],
-          ] as [Tab, string][]).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex-1 text-xs font-medium py-2 rounded-lg transition-colors ${
-                tab === key
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+
+        {/* Segmented control */}
+        <div className="max-w-2xl mx-auto px-5 pb-3">
+          <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
+            <motion.div
+              className="absolute top-[2px] bottom-[2px] bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+              initial={false}
+              animate={{
+                width: `calc(${100 / tabs.length}% - 2px)`,
+                left: `calc(${(activeIndex * 100) / tabs.length}% + 1px)`,
+              }}
+              transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+            />
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`relative z-10 flex-1 text-[13px] font-semibold py-[7px] rounded-[8px] transition-colors duration-200 ${
+                  tab === t.key ? 'text-apple-text' : 'text-apple-secondary'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        {tab === 'overview' && <OverviewTab />}
-        {tab === 'settlements' && <SettlementsTab />}
-        {tab === 'users' && <UsersTab />}
+      <main className="max-w-2xl mx-auto px-5 py-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {tab === 'overview' && <OverviewTab />}
+            {tab === 'settlements' && <SettlementsTab />}
+            {tab === 'users' && <UsersTab />}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   )
@@ -100,42 +136,69 @@ function OverviewTab() {
     }).finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="text-center text-gray-400 py-8">Carregando...</p>
+  if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
 
   const synced = surveys.filter(s => s.status === 'synced').length
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Questionários" value={surveys.length} />
-        <StatCard label="Sincronizados" value={synced} />
-        <StatCard label="Assentamentos" value={settlements.length} />
+        {[
+          { label: 'Questionários', value: surveys.length, color: 'text-apple-blue' },
+          { label: 'Sincronizados', value: synced, color: 'text-apple-green' },
+          { label: 'Assentamentos', value: settlements.length, color: 'text-apple-orange' },
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            className="bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] text-center"
+          >
+            <p className={`text-[28px] font-bold ${stat.color}`}>{stat.value}</p>
+            <p className="text-[12px] font-medium text-apple-secondary mt-0.5">{stat.label}</p>
+          </motion.div>
+        ))}
       </div>
 
       {surveys.length === 0 ? (
-        <p className="text-center text-gray-400 py-8">Nenhum questionário sincronizado ainda.</p>
+        <div className="text-center py-12">
+          <div className="w-12 h-12 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868B" strokeWidth="1.5">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+            </svg>
+          </div>
+          <p className="text-[15px] text-apple-secondary">Nenhum questionário sincronizado ainda.</p>
+        </div>
       ) : (
-        <div className="space-y-3">
-          <h2 className="text-sm font-medium text-gray-500">Últimos questionários</h2>
-          {surveys.slice(0, 10).map((s) => {
+        <div className="space-y-2.5">
+          <h2 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1">Últimos questionários</h2>
+          {surveys.slice(0, 10).map((s, i) => {
             const settlement = settlements.find(st => st.id === s.settlementId)
             return (
-              <div key={s.id} className="bg-white rounded-2xl p-4 shadow-sm">
+              <motion.div
+                key={s.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]"
+              >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{settlement?.name ?? `Assentamento #${s.settlementId}`}</p>
-                    <p className="text-sm text-gray-500">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold text-apple-text truncate">{settlement?.name ?? `#${s.settlementId}`}</p>
+                    <p className="text-[13px] text-apple-secondary mt-0.5">
                       {s.lotNumber ? `Lote ${s.lotNumber} · ` : ''}
                       {new Date(s.createdAt).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    s.status === 'synced' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                  <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full ${
+                    s.status === 'synced' ? 'bg-apple-green/12 text-apple-green' : 'bg-apple-blue/12 text-apple-blue'
                   }`}>
                     {s.status === 'synced' ? 'Sincronizado' : s.status}
                   </span>
                 </div>
-              </div>
+              </motion.div>
             )
           })}
         </div>
@@ -143,17 +206,6 @@ function OverviewTab() {
     </div>
   )
 }
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-      <p className="text-2xl font-semibold text-gray-900">{value}</p>
-      <p className="text-xs text-gray-500 mt-1">{label}</p>
-    </div>
-  )
-}
-
-const BIOMES = ['Amazônia', 'Cerrado', 'Pantanal']
 
 function SettlementsTab() {
   const [settlements, setSettlements] = useState<Settlement[]>([])
@@ -225,134 +277,176 @@ function SettlementsTab() {
     loadSettlements()
   }
 
-  if (loading) return <p className="text-center text-gray-400 py-8">Carregando...</p>
+  if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
 
   return (
     <div className="space-y-4">
-      {editingId === null && (
-        <button
-          onClick={startNew}
-          className="w-full bg-green-600 text-white text-center rounded-2xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm"
-        >
-          + Novo Assentamento
-        </button>
-      )}
+      <AnimatePresence mode="wait">
+        {editingId === null ? (
+          <motion.div key="add-btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={startNew}
+              className="flex items-center justify-center gap-2 w-full bg-apple-green text-white rounded-2xl py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(52,199,89,0.25)]"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+              Novo Assentamento
+            </motion.button>
+          </motion.div>
+        ) : (
+          <motion.form
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            onSubmit={handleSave}
+            className="space-y-4"
+          >
+            <h2 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1">
+              {editingId === 'new' ? 'Novo Assentamento' : 'Editar Assentamento'}
+            </h2>
 
-      {editingId !== null && (
-        <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-          <h2 className="text-base font-medium text-gray-900">
-            {editingId === 'new' ? 'Novo Assentamento' : 'Editar Assentamento'}
-          </h2>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Ex: PA Nova Esperança"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Município</label>
-            <input
-              type="text"
-              value={municipality}
-              onChange={(e) => setMunicipality(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Ex: Cáceres"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bioma(s)</label>
-            <div className="grid grid-cols-2 gap-2">
-              {BIOMES.map((b) => {
-                const selected = selectedBiomes.includes(b)
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => toggleBiome(b)}
-                    className={`text-left px-3 py-2 rounded-xl border text-sm font-medium transition-all active:scale-[0.98] ${
-                      selected
-                        ? 'border-green-500 bg-green-50 text-green-800'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {selected ? '✓ ' : ''}{b}
-                  </button>
-                )
-              })}
+            {/* Grouped inputs */}
+            <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Nome</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                  placeholder="Ex: PA Nova Esperança"
+                  required
+                />
+              </div>
+              <div className="h-px bg-apple-separator mx-4" />
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Município</label>
+                <input
+                  type="text"
+                  value={municipality}
+                  onChange={(e) => setMunicipality(e.target.value)}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                  placeholder="Ex: Cáceres"
+                  required
+                />
+              </div>
             </div>
-            {selectedBiomes.length === 0 && (
-              <p className="text-xs text-red-500 mt-1">Selecione pelo menos um bioma</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-              {saving ? 'Salvando...' : 'Salvar'}
-            </button>
-            <button
-              type="button"
-              onClick={cancel}
-              className="px-6 rounded-xl py-3 text-base font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      )}
+
+            {/* Biome selection */}
+            <div>
+              <h3 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1 mb-2">Bioma(s)</h3>
+              <div className="flex gap-2">
+                {BIOMES.map((b) => {
+                  const selected = selectedBiomes.includes(b)
+                  return (
+                    <motion.button
+                      key={b}
+                      type="button"
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => toggleBiome(b)}
+                      className={`flex-1 py-2.5 rounded-xl text-[14px] font-semibold transition-all ${
+                        selected
+                          ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(52,199,89,0.25)]'
+                          : 'bg-apple-card text-apple-text shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]'
+                      }`}
+                    >
+                      {b}
+                    </motion.button>
+                  )
+                })}
+              </div>
+              {selectedBiomes.length === 0 && (
+                <p className="text-[12px] text-apple-red mt-1.5 px-1">Selecione pelo menos um bioma</p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <motion.button
+                type="submit"
+                disabled={saving}
+                whileTap={{ scale: 0.97 }}
+                className="flex-1 bg-apple-green text-white rounded-[14px] py-[13px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </motion.button>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={cancel}
+                className="px-6 rounded-[14px] py-[13px] text-[17px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+              >
+                Cancelar
+              </motion.button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
 
       {settlements.length === 0 && editingId === null ? (
-        <p className="text-center text-gray-400 py-8">Nenhum assentamento cadastrado.</p>
+        <div className="text-center py-12">
+          <div className="w-12 h-12 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86868B" strokeWidth="1.5">
+              <path d="M3 21h18M3 7v14M21 7v14M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/>
+              <path d="M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4"/>
+            </svg>
+          </div>
+          <p className="text-[15px] text-apple-secondary">Nenhum assentamento cadastrado.</p>
+        </div>
       ) : (
-        <div className="space-y-3">
-          {settlements.map((s) => (
-            <div key={s.id} className="bg-white rounded-2xl p-4 shadow-sm">
+        <div className="space-y-2.5">
+          {settlements.map((s, i) => (
+            <motion.div
+              key={s.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03 }}
+              className="bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]"
+            >
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">{s.name}</p>
-                  <p className="text-sm text-gray-500">{s.municipality} · {s.biome}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-semibold text-apple-text">{s.name}</p>
+                  <p className="text-[13px] text-apple-secondary mt-0.5">{s.municipality} · {s.biome}</p>
                 </div>
-                <div className="flex gap-2">
-                  <button
+                <div className="flex items-center gap-2 ml-3">
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
                     onClick={() => startEdit(s)}
-                    className="text-sm px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                    className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
                   >
                     Editar
-                  </button>
+                  </motion.button>
                   {confirmDeleteId === s.id ? (
-                    <div className="flex gap-1">
-                      <button
+                    <div className="flex gap-1.5">
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
                         onClick={() => handleDelete(s.id)}
-                        className="text-sm px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red text-white"
                       >
-                        Confirmar
-                      </button>
-                      <button
+                        Sim
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
                         onClick={() => setConfirmDeleteId(null)}
-                        className="text-sm px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-text/5 text-apple-text"
                       >
                         Não
-                      </button>
+                      </motion.button>
                     </div>
                   ) : (
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
                       onClick={() => setConfirmDeleteId(s.id)}
-                      className="text-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                      className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
                     >
                       Excluir
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -411,135 +505,191 @@ function UsersTab() {
     }
   }
 
-  if (loading) return <p className="text-center text-gray-400 py-8">Carregando...</p>
+  if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
 
   return (
     <div className="space-y-4">
       {message && (
-        <div className={`text-sm rounded-xl p-3 ${message.includes('sucesso') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-          {message}
-        </div>
-      )}
-
-      {!showForm && (
-        <button
-          onClick={() => { setShowForm(true); setMessage('') }}
-          className="w-full bg-green-600 text-white text-center rounded-2xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm"
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className={`text-[14px] font-medium rounded-2xl px-4 py-3 ${
+            message.includes('sucesso') ? 'bg-apple-green/8 text-apple-green' : 'bg-apple-red/8 text-apple-red'
+          }`}
         >
-          + Novo Usuário
-        </button>
+          {message}
+        </motion.div>
       )}
 
-      {showForm && (
-        <form onSubmit={handleRegister} className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-          <h2 className="text-base font-medium text-gray-900">Cadastrar Novo Usuário</h2>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Nome completo"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="email@exemplo.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="******"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'interviewer' | 'viewer')}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+      <AnimatePresence mode="wait">
+        {!showForm ? (
+          <motion.div key="add-btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => { setShowForm(true); setMessage('') }}
+              className="flex items-center justify-center gap-2 w-full bg-apple-green text-white rounded-2xl py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(52,199,89,0.25)]"
             >
-              <option value="interviewer">Entrevistador</option>
-              <option value="viewer">Visualizador</option>
-            </select>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
-            >
-              {saving ? 'Cadastrando...' : 'Cadastrar'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="px-6 rounded-xl py-3 text-base font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      )}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+              Novo Usuário
+            </motion.button>
+          </motion.div>
+        ) : (
+          <motion.form
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            onSubmit={handleRegister}
+            className="space-y-4"
+          >
+            <h2 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1">Novo Usuário</h2>
 
-      <div className="space-y-3">
-        {userList.map((u) => (
-          <div key={u.id} className="bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">{u.name}</p>
-                <p className="text-sm text-gray-500">{u.email}</p>
+            {/* Grouped inputs */}
+            <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Nome</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                  placeholder="Nome completo"
+                  required
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                  u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                  u.role === 'interviewer' ? 'bg-blue-100 text-blue-700' :
-                  'bg-gray-100 text-gray-600'
-                }`}>
+              <div className="h-px bg-apple-separator mx-4" />
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                  placeholder="email@exemplo.com"
+                  required
+                />
+              </div>
+              <div className="h-px bg-apple-separator mx-4" />
+              <div className="px-4 pt-3 pb-2.5">
+                <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Senha</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                  placeholder="********"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Role segmented control */}
+            <div>
+              <h3 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1 mb-2">Perfil</h3>
+              <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
+                <motion.div
+                  className="absolute top-[2px] bottom-[2px] bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+                  initial={false}
+                  animate={{
+                    width: 'calc(50% - 2px)',
+                    left: role === 'interviewer' ? '1px' : 'calc(50% + 1px)',
+                  }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setRole('interviewer')}
+                  className={`relative z-10 flex-1 text-[14px] font-semibold py-[8px] rounded-[8px] transition-colors duration-200 ${
+                    role === 'interviewer' ? 'text-apple-text' : 'text-apple-secondary'
+                  }`}
+                >
+                  Entrevistador
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('viewer')}
+                  className={`relative z-10 flex-1 text-[14px] font-semibold py-[8px] rounded-[8px] transition-colors duration-200 ${
+                    role === 'viewer' ? 'text-apple-text' : 'text-apple-secondary'
+                  }`}
+                >
+                  Visualizador
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <motion.button
+                type="submit"
+                disabled={saving}
+                whileTap={{ scale: 0.97 }}
+                className="flex-1 bg-apple-green text-white rounded-[14px] py-[13px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
+              >
+                {saving ? 'Cadastrando...' : 'Cadastrar'}
+              </motion.button>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowForm(false)}
+                className="px-6 rounded-[14px] py-[13px] text-[17px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+              >
+                Cancelar
+              </motion.button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      <div className="space-y-2.5">
+        {userList.map((u, i) => (
+          <motion.div
+            key={u.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03 }}
+            className="bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold text-apple-text">{u.name}</p>
+                <p className="text-[13px] text-apple-secondary mt-0.5">{u.email}</p>
+              </div>
+              <div className="flex items-center gap-2 ml-3">
+                <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap ${roleStyles[u.role] ?? roleStyles.viewer}`}>
                   {roleLabels[u.role] ?? u.role}
                 </span>
                 {u.id !== currentUser?.id && (
                   confirmDeleteId === u.id ? (
-                    <div className="flex gap-1">
-                      <button
+                    <div className="flex gap-1.5">
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
                         onClick={() => handleDelete(u.id)}
-                        className="text-sm px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red text-white"
                       >
-                        Confirmar
-                      </button>
-                      <button
+                        Sim
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
                         onClick={() => setConfirmDeleteId(null)}
-                        className="text-sm px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                        className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-text/5 text-apple-text"
                       >
                         Não
-                      </button>
+                      </motion.button>
                     </div>
                   ) : (
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
                       onClick={() => setConfirmDeleteId(u.id)}
-                      className="text-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                      className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-red/8 text-apple-red hover:bg-apple-red/14 transition-colors"
                     >
                       Excluir
-                    </button>
+                    </motion.button>
                   )
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

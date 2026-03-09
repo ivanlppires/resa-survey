@@ -76,73 +76,112 @@ export default function SurveyPage() {
   const answeredCount = responses.size
   const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
 
-  if (loading) return <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center"><p className="text-gray-400">Carregando...</p></div>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-apple-bg flex items-center justify-center">
+        <p className="text-[15px] text-apple-secondary">Carregando...</p>
+      </div>
+    )
+  }
+
+  const activeIndex = sections.indexOf(currentSection)
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-apple-bg">
       {/* Progress bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+      <div className="fixed top-0 left-0 right-0 h-[3px] bg-apple-text/5 z-50">
         <motion.div
-          className="h-full bg-green-500"
+          className="h-full bg-apple-green rounded-r-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
         />
       </div>
 
-      <header className="bg-white/80 backdrop-blur-lg sticky top-1 z-10 border-b border-gray-200/50">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="text-gray-500 hover:text-gray-900">&larr; Voltar</button>
-          <span className="text-sm text-gray-500">{Math.round(progress)}% concluído</span>
+      {/* Glass header */}
+      <header className="bg-apple-glass backdrop-blur-2xl sticky top-[3px] z-10 border-b border-apple-glass-border">
+        <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigate('/')}
+            className="w-8 h-8 rounded-full bg-apple-text/5 flex items-center justify-center hover:bg-apple-text/8 transition-colors"
+          >
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+              <path d="M7 1L1 7l6 6" stroke="#1D1D1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </motion.button>
+          <span className="text-[14px] font-semibold text-apple-secondary">{Math.round(progress)}% concluído</span>
         </div>
-        {/* Section tabs */}
-        <div className="max-w-lg mx-auto px-4 pb-2 flex gap-1">
-          {sections.map((s) => (
-            <button
-              key={s}
-              onClick={() => setCurrentSection(s)}
-              className={`flex-1 text-xs font-medium py-2 rounded-lg transition-colors ${
-                currentSection === s
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {sectionLabels[s]}
-            </button>
-          ))}
+
+        {/* Apple-style segmented control */}
+        <div className="max-w-lg mx-auto px-5 pb-3">
+          <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
+            <motion.div
+              className="absolute top-[2px] bottom-[2px] bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+              initial={false}
+              animate={{
+                width: `calc(${100 / sections.length}% - 2px)`,
+                left: `calc(${(activeIndex * 100) / sections.length}% + 1px)`,
+              }}
+              transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+            />
+            {sections.map((s) => (
+              <button
+                key={s}
+                onClick={() => setCurrentSection(s)}
+                className={`relative z-10 flex-1 text-[13px] font-semibold py-[7px] rounded-[8px] transition-colors duration-200 ${
+                  currentSection === s ? 'text-apple-text' : 'text-apple-secondary'
+                }`}
+              >
+                {sectionLabels[s]}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6">
+      <main className="max-w-lg mx-auto px-5 py-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSection}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-4"
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="space-y-3.5"
           >
-            {sectionQuestions.map((q) => (
-              <QuestionCard
+            {sectionQuestions.map((q, i) => (
+              <motion.div
                 key={q.key}
-                question={q}
-                value={responses.get(q.key)}
-                onChange={(val) => saveResponse(q.key, val)}
-              />
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03, duration: 0.25 }}
+              >
+                <QuestionCard
+                  question={q}
+                  value={responses.get(q.key)}
+                  onChange={(val) => saveResponse(q.key, val)}
+                />
+              </motion.div>
             ))}
           </motion.div>
         </AnimatePresence>
 
         {currentSection === 'environmental' && (
-          <div className="mt-8">
-            <button
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-8"
+          >
+            <motion.button
               onClick={handleComplete}
-              className="w-full bg-green-600 text-white rounded-2xl py-4 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all"
+              whileTap={{ scale: 0.97 }}
+              className="w-full bg-apple-green text-white rounded-2xl py-[16px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_12px_rgba(52,199,89,0.25)]"
             >
               Finalizar Questionário
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         )}
       </main>
     </div>
@@ -155,9 +194,9 @@ function QuestionCard({ question, value, onChange }: {
   onChange: (val: unknown) => void
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm">
-      <p className="text-sm text-gray-400 mb-1">Pergunta {question.number}</p>
-      <p className="font-medium text-gray-900 mb-4">{question.text}</p>
+    <div className="bg-apple-card rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+      <p className="text-[12px] font-semibold text-apple-green tracking-wide uppercase mb-1">Pergunta {question.number}</p>
+      <p className="text-[16px] font-semibold text-apple-text leading-snug mb-4">{question.text}</p>
 
       {question.type === 'single_choice' && question.options && (
         <SingleChoice options={question.options} value={value as string} onChange={onChange} />
@@ -175,7 +214,7 @@ function QuestionCard({ question, value, onChange }: {
         <textarea
           value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[80px]"
+          className="w-full rounded-xl bg-apple-bg px-4 py-3 text-[16px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 min-h-[80px] placeholder:text-apple-tertiary transition-shadow"
           placeholder="Digite sua resposta..."
         />
       )}
@@ -192,32 +231,49 @@ function SingleChoice({ options, value, onChange }: {
 
   return (
     <div className="space-y-2">
-      {options.map((opt) => (
-        <div key={opt.value}>
-          <button
-            onClick={() => onChange(opt.value)}
-            className={`w-full text-left px-4 py-3 rounded-xl border transition-all active:scale-[0.98] ${
-              value === opt.value
-                ? 'border-green-500 bg-green-50 text-green-800'
-                : 'border-gray-200 text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            {opt.label}
-          </button>
-          {opt.hasTextInput && value === opt.value && (
-            <input
-              type="text"
-              value={textInputs[opt.value] ?? ''}
-              onChange={(e) => {
-                setTextInputs((prev) => ({ ...prev, [opt.value]: e.target.value }))
-                onChange(`${opt.value}:${e.target.value}`)
-              }}
-              className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Especifique..."
-            />
-          )}
-        </div>
-      ))}
+      {options.map((opt) => {
+        const selected = value === opt.value
+        return (
+          <div key={opt.value}>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onChange(opt.value)}
+              className={`w-full text-left px-4 py-3.5 rounded-xl transition-all text-[15px] font-medium ${
+                selected
+                  ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
+                  : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <span className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                  selected ? 'border-apple-green bg-apple-green' : 'border-apple-tertiary'
+                }`}>
+                  {selected && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="w-2 h-2 rounded-full bg-white"
+                    />
+                  )}
+                </span>
+                {opt.label}
+              </span>
+            </motion.button>
+            {opt.hasTextInput && selected && (
+              <input
+                type="text"
+                value={textInputs[opt.value] ?? ''}
+                onChange={(e) => {
+                  setTextInputs((prev) => ({ ...prev, [opt.value]: e.target.value }))
+                  onChange(`${opt.value}:${e.target.value}`)
+                }}
+                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-2.5 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
+                placeholder="Especifique..."
+              />
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -240,29 +296,38 @@ function MultipleChoice({ options, value, onChange }: {
         const selected = value.includes(opt.value)
         return (
           <div key={opt.value}>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.98 }}
               onClick={() => toggle(opt.value)}
-              className={`w-full text-left px-4 py-3 rounded-xl border transition-all active:scale-[0.98] ${
+              className={`w-full text-left px-4 py-3.5 rounded-xl transition-all text-[15px] font-medium ${
                 selected
-                  ? 'border-green-500 bg-green-50 text-green-800'
-                  : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                  ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
+                  : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
               }`}
             >
-              <span className="flex items-center gap-2">
-                <span className={`w-5 h-5 rounded flex items-center justify-center text-xs border ${
-                  selected ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'
+              <span className="flex items-center gap-3">
+                <span className={`w-[22px] h-[22px] rounded-[6px] border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                  selected ? 'border-apple-green bg-apple-green' : 'border-apple-tertiary'
                 }`}>
-                  {selected && '\u2713'}
+                  {selected && (
+                    <motion.svg
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      width="12" height="12" viewBox="0 0 12 12" fill="none"
+                    >
+                      <path d="M2.5 6l2.5 2.5 4.5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </motion.svg>
+                  )}
                 </span>
                 {opt.label}
               </span>
-            </button>
+            </motion.button>
             {opt.hasTextInput && selected && (
               <input
                 type="text"
                 value={textInputs[opt.value] ?? ''}
                 onChange={(e) => setTextInputs((prev) => ({ ...prev, [opt.value]: e.target.value }))}
-                className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-2.5 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
                 placeholder="Especifique..."
               />
             )}
@@ -283,17 +348,18 @@ function ScaleInput({ min, max, value, onChange }: {
   return (
     <div className="flex gap-2 justify-center">
       {points.map((n) => (
-        <button
+        <motion.button
           key={n}
+          whileTap={{ scale: 0.9 }}
           onClick={() => onChange(n)}
-          className={`w-12 h-12 rounded-xl border text-base font-medium transition-all active:scale-[0.95] ${
+          className={`w-12 h-12 rounded-[14px] text-[16px] font-semibold transition-all ${
             value === n
-              ? 'border-green-500 bg-green-500 text-white'
-              : 'border-gray-200 text-gray-700 hover:border-gray-300'
+              ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(52,199,89,0.3)]'
+              : 'bg-apple-bg text-apple-text hover:bg-apple-text/6'
           }`}
         >
           {n}
-        </button>
+        </motion.button>
       ))}
     </div>
   )

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { motion } from 'framer-motion'
 import { useAuth } from '../lib/auth'
 
 export default function LoginPage() {
@@ -25,47 +26,80 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-gray-900">RESA Survey</h1>
-          <p className="mt-2 text-gray-500">Faça login para continuar</p>
+    <div className="min-h-screen bg-apple-bg flex items-center justify-center p-5">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="w-full max-w-[380px]"
+      >
+        <div className="text-center mb-10">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <div className="w-16 h-16 rounded-[18px] bg-apple-green/10 flex items-center justify-center mx-auto mb-5">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                <path d="M8 12l2.5 2.5L16 9"/>
+              </svg>
+            </div>
+            <h1 className="text-[34px] font-extrabold tracking-tight text-apple-text">RESA</h1>
+            <p className="text-[15px] text-apple-secondary mt-1">Pesquisa Socioeconômica e Ambiental</p>
+          </motion.div>
         </div>
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+
+        <form onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 text-red-600 text-sm rounded-xl p-3">{error}</div>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="bg-apple-red/8 text-apple-red text-[14px] font-medium rounded-2xl px-4 py-3 mb-4"
+            >
+              {error}
+            </motion.div>
           )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="seu@email.com"
-              required
-            />
+
+          {/* Apple-style grouped inputs */}
+          <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+            <div className="px-4 pt-3 pb-2.5">
+              <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                placeholder="seu@email.com"
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div className="h-px bg-apple-separator mx-4" />
+            <div className="px-4 pt-3 pb-2.5">
+              <label className="block text-[13px] font-medium text-apple-secondary mb-0.5">Senha</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-transparent text-[17px] text-apple-text outline-none placeholder:text-apple-tertiary"
+                placeholder="********"
+                required
+                autoComplete="current-password"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="******"
-              required
-            />
-          </div>
-          <button
+
+          <motion.button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
+            whileTap={{ scale: 0.97 }}
+            className="w-full mt-5 bg-apple-green text-white rounded-[14px] py-[14px] text-[17px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40 shadow-[0_2px_8px_rgba(52,199,89,0.3)]"
           >
             {loading ? 'Entrando...' : 'Entrar'}
-          </button>
+          </motion.button>
         </form>
-      </div>
+      </motion.div>
     </div>
   )
 }

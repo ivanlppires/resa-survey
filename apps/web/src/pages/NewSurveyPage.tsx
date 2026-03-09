@@ -67,7 +67,7 @@ export default function NewSurveyPage() {
           <button onClick={() => navigate('/')} className="text-gray-500 hover:text-gray-900">
             &larr; Voltar
           </button>
-          <h1 className="text-lg font-semibold text-gray-900">Novo Questionario</h1>
+          <h1 className="text-lg font-semibold text-gray-900">Novo Questionário</h1>
         </div>
       </header>
 
@@ -88,11 +88,11 @@ export default function NewSurveyPage() {
                 ))}
               </select>
             ) : (
-              <p className="text-sm text-gray-400 py-3">Nenhum assentamento cadastrado. Peca ao admin para cadastrar.</p>
+              <p className="text-sm text-gray-400 py-3">Nenhum assentamento cadastrado. Peça ao admin para cadastrar.</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Numero do Lote</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Número do Lote</label>
             <input
               type="text"
               value={lotNumber}
@@ -107,7 +107,7 @@ export default function NewSurveyPage() {
             disabled={loading || !settlementId}
             className="w-full bg-green-600 text-white rounded-xl py-3 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            {loading ? 'Criando...' : 'Iniciar Questionario'}
+            {loading ? 'Criando...' : 'Iniciar Questionário'}
           </button>
         </form>
       </main>

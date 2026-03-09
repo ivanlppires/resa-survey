@@ -5,7 +5,7 @@ import { db, type LocalQuestion } from '../lib/db'
 import { getQuestions } from '../lib/sync'
 
 const sectionLabels = {
-  socioeconomic: 'Socioeconomico',
+  socioeconomic: 'Socioeconômico',
   behavioral: 'Comportamental',
   environmental: 'Ambiental',
 } as const
@@ -93,7 +93,7 @@ export default function SurveyPage() {
       <header className="bg-white/80 backdrop-blur-lg sticky top-1 z-10 border-b border-gray-200/50">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <button onClick={() => navigate('/')} className="text-gray-500 hover:text-gray-900">&larr; Voltar</button>
-          <span className="text-sm text-gray-500">{Math.round(progress)}% concluido</span>
+          <span className="text-sm text-gray-500">{Math.round(progress)}% concluído</span>
         </div>
         {/* Section tabs */}
         <div className="max-w-lg mx-auto px-4 pb-2 flex gap-1">
@@ -140,7 +140,7 @@ export default function SurveyPage() {
               onClick={handleComplete}
               className="w-full bg-green-600 text-white rounded-2xl py-4 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all"
             >
-              Finalizar Questionario
+              Finalizar Questionário
             </button>
           </div>
         )}

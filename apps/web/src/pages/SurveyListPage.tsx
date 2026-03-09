@@ -7,7 +7,7 @@ import { syncCompletedSurveys, syncQuestions } from '../lib/sync'
 const statusLabels: Record<string, string> = {
   draft: 'Rascunho',
   in_progress: 'Em andamento',
-  completed: 'Concluido',
+  completed: 'Concluído',
   synced: 'Sincronizado',
 }
 
@@ -75,11 +75,11 @@ export default function SurveyListPage() {
           to="/survey/new"
           className="block w-full bg-green-600 text-white text-center rounded-2xl py-4 text-base font-medium hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm"
         >
-          + Novo Questionario
+          + Novo Questionário
         </Link>
 
         {surveys.length === 0 ? (
-          <p className="text-center text-gray-400 mt-12">Nenhum questionario ainda</p>
+          <p className="text-center text-gray-400 mt-12">Nenhum questionário ainda</p>
         ) : (
           <div className="mt-6 space-y-3">
             {surveys.map((s) => (

@@ -701,6 +701,7 @@ function SettlementsTab() {
 function UsersTab() {
   const { user: currentUser } = useAuth()
   const [userList, setUserList] = useState<UserInfo[]>([])
+  const [allSettlements, setAllSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -711,11 +712,19 @@ function UsersTab() {
   const [message, setMessage] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
+  // Settlement assignment state
+  const [assignUserId, setAssignUserId] = useState<number | null>(null)
+  const [assignedIds, setAssignedIds] = useState<number[]>([])
+  const [savingAssign, setSavingAssign] = useState(false)
+
   const loadUsers = () => {
     apiFetch<UserInfo[]>('/admin/users').then(setUserList).finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadUsers() }, [])
+  useEffect(() => {
+    loadUsers()
+    apiFetch<Settlement[]>('/settlements').then(setAllSettlements).catch(() => {})
+  }, [])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -749,6 +758,36 @@ function UsersTab() {
     }
   }
 
+  const openAssign = async (userId: number) => {
+    setAssignUserId(userId)
+    try {
+      const ids = await apiFetch<number[]>(`/admin/users/${userId}/settlements`)
+      setAssignedIds(ids)
+    } catch {
+      setAssignedIds([])
+    }
+  }
+
+  const toggleSettlement = (sid: number) => {
+    setAssignedIds((prev) => prev.includes(sid) ? prev.filter((id) => id !== sid) : [...prev, sid])
+  }
+
+  const saveAssignments = async () => {
+    if (!assignUserId) return
+    setSavingAssign(true)
+    try {
+      await apiFetch(`/admin/users/${assignUserId}/settlements`, {
+        method: 'PUT',
+        body: JSON.stringify({ settlementIds: assignedIds }),
+      })
+      setAssignUserId(null)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Erro ao salvar vínculos')
+    } finally {
+      setSavingAssign(false)
+    }
+  }
+
   if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
 
   return (
@@ -764,6 +803,93 @@ function UsersTab() {
           {message}
         </motion.div>
       )}
+
+      {/* Settlement assignment modal */}
+      <AnimatePresence>
+        {assignUserId !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-5"
+            onClick={() => setAssignUserId(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="bg-apple-card rounded-3xl p-5 w-full max-w-md shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-[17px] font-bold text-apple-text mb-1">Assentamentos Vinculados</h3>
+              <p className="text-[13px] text-apple-secondary mb-4">
+                {userList.find((u) => u.id === assignUserId)?.name}
+              </p>
+
+              {allSettlements.length === 0 ? (
+                <p className="text-[14px] text-apple-tertiary text-center py-6">Nenhum assentamento cadastrado.</p>
+              ) : (
+                <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                  {allSettlements.map((s) => {
+                    const selected = assignedIds.includes(s.id)
+                    return (
+                      <motion.button
+                        key={s.id}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => toggleSettlement(s.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all text-[15px] font-medium ${
+                          selected
+                            ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
+                            : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className={`w-[22px] h-[22px] rounded-[6px] border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            selected ? 'border-apple-green bg-apple-green' : 'border-apple-tertiary'
+                          }`}>
+                            {selected && (
+                              <motion.svg
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                width="12" height="12" viewBox="0 0 12 12" fill="none"
+                              >
+                                <path d="M2.5 6l2.5 2.5 4.5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </motion.svg>
+                            )}
+                          </span>
+                          <span>
+                            <span className="block">{s.name}</span>
+                            <span className="text-[12px] text-apple-secondary font-normal">{s.municipality}</span>
+                          </span>
+                        </span>
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-5">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={saveAssignments}
+                  disabled={savingAssign}
+                  className="flex-1 bg-apple-green text-white rounded-[14px] py-[12px] text-[16px] font-semibold hover:bg-apple-green-hover transition-colors disabled:opacity-40"
+                >
+                  {savingAssign ? 'Salvando...' : `Salvar (${assignedIds.length})`}
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setAssignUserId(null)}
+                  className="px-5 rounded-[14px] py-[12px] text-[16px] font-semibold bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors"
+                >
+                  Cancelar
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {!showForm ? (
@@ -903,6 +1029,15 @@ function UsersTab() {
                 <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap ${roleStyles[u.role] ?? roleStyles.viewer}`}>
                   {roleLabels[u.role] ?? u.role}
                 </span>
+                {u.role !== 'admin' && (
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => openAssign(u.id)}
+                    className="text-[13px] font-semibold px-3 py-[5px] rounded-full bg-apple-orange/10 text-apple-orange hover:bg-apple-orange/18 transition-colors"
+                  >
+                    Assentamentos
+                  </motion.button>
+                )}
                 {u.id !== currentUser?.id && (
                   confirmDeleteId === u.id ? (
                     <div className="flex gap-1.5">

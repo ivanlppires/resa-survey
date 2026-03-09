@@ -50,6 +50,15 @@ export const questions = pgTable('questions', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
+// ── User ↔ Settlement (many-to-many) ──────────────────
+
+export const userSettlements = pgTable('user_settlements', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  settlementId: integer('settlement_id').notNull().references(() => settlements.id, { onDelete: 'cascade' }),
+  assignedAt: timestamp('assigned_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 // ── Surveys ────────────────────────────────────────────
 
 export const surveys = pgTable('surveys', {
@@ -91,10 +100,17 @@ export const syncLog = pgTable('sync_log', {
 
 export const usersRelations = relations(users, ({ many }) => ({
   surveys: many(surveys),
+  userSettlements: many(userSettlements),
 }))
 
 export const settlementsRelations = relations(settlements, ({ many }) => ({
   surveys: many(surveys),
+  userSettlements: many(userSettlements),
+}))
+
+export const userSettlementsRelations = relations(userSettlements, ({ one }) => ({
+  user: one(users, { fields: [userSettlements.userId], references: [users.id] }),
+  settlement: one(settlements, { fields: [userSettlements.settlementId], references: [settlements.id] }),
 }))
 
 export const surveysRelations = relations(surveys, ({ one, many }) => ({

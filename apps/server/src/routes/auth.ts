@@ -2,8 +2,8 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { db } from '../db/index.js'
-import { users } from '../db/schema.js'
-import { eq } from 'drizzle-orm'
+import { users, userSettlements } from '../db/schema.js'
+import { eq, and } from 'drizzle-orm'
 
 const registerSchema = z.object({
   name: z.string().min(1),
@@ -80,5 +80,28 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'User not found' })
     }
     return { success: true }
+  })
+
+  // ── User ↔ Settlement assignments ──────────────────
+
+  app.get<{ Params: { id: string } }>('/api/admin/users/:id/settlements', { preHandler: [app.requireAdmin] }, async (request) => {
+    const userId = Number(request.params.id)
+    const rows = await db.select({ settlementId: userSettlements.settlementId }).from(userSettlements).where(eq(userSettlements.userId, userId))
+    return rows.map((r) => r.settlementId)
+  })
+
+  app.put<{ Params: { id: string } }>('/api/admin/users/:id/settlements', { preHandler: [app.requireAdmin] }, async (request) => {
+    const userId = Number(request.params.id)
+    const body = z.object({ settlementIds: z.array(z.number()) }).parse(request.body)
+
+    await db.delete(userSettlements).where(eq(userSettlements.userId, userId))
+
+    if (body.settlementIds.length > 0) {
+      await db.insert(userSettlements).values(
+        body.settlementIds.map((sid) => ({ userId, settlementId: sid }))
+      )
+    }
+
+    return { success: true, settlementIds: body.settlementIds }
   })
 }

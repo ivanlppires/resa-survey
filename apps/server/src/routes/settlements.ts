@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { db } from '../db/index.js'
-import { settlements } from '../db/schema.js'
-import { eq } from 'drizzle-orm'
+import { settlements, userSettlements } from '../db/schema.js'
+import { eq, inArray } from 'drizzle-orm'
 
 const settlementSchema = z.object({
   name: z.string().min(1),
@@ -13,8 +13,16 @@ const settlementSchema = z.object({
 })
 
 export async function settlementRoutes(app: FastifyInstance) {
-  app.get('/api/settlements', async () => {
-    return db.select().from(settlements)
+  app.get('/api/settlements', { preHandler: [app.authenticate] }, async (request) => {
+    if (request.user.role === 'admin') {
+      return db.select().from(settlements)
+    }
+    const assigned = await db.select({ settlementId: userSettlements.settlementId })
+      .from(userSettlements)
+      .where(eq(userSettlements.userId, request.user.id))
+    const ids = assigned.map((r) => r.settlementId)
+    if (ids.length === 0) return []
+    return db.select().from(settlements).where(inArray(settlements.id, ids))
   })
 
   app.get<{ Params: { id: string } }>('/api/settlements/:id', async (request, reply) => {

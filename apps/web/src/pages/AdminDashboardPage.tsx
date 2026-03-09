@@ -153,7 +153,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
   )
 }
 
-const BIOMES = ['Amazônia', 'Caatinga', 'Cerrado', 'Mata Atlântica', 'Pampa', 'Pantanal']
+const BIOMES = ['Amazônia', 'Cerrado', 'Pantanal']
 
 function SettlementsTab() {
   const [settlements, setSettlements] = useState<Settlement[]>([])

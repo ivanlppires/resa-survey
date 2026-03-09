@@ -1,13 +1,16 @@
 import { db, type LocalQuestion } from './db'
 import { apiFetch } from './api'
+import { defaultQuestions } from './defaultQuestions'
 
 export async function syncQuestions(): Promise<void> {
   try {
     const questions = await apiFetch<LocalQuestion[]>('/questions')
-    await db.questions.clear()
-    await db.questions.bulkAdd(questions)
+    if (questions.length > 0) {
+      await db.questions.clear()
+      await db.questions.bulkAdd(questions)
+    }
   } catch {
-    // Offline — use cached questions
+    // Offline — use cached or default questions
   }
 }
 
@@ -15,6 +18,11 @@ export async function getQuestions(): Promise<LocalQuestion[]> {
   let questions = await db.questions.orderBy('sortOrder').toArray()
   if (questions.length === 0) {
     await syncQuestions()
+    questions = await db.questions.orderBy('sortOrder').toArray()
+  }
+  // If still empty (offline and no cache), use embedded defaults
+  if (questions.length === 0) {
+    await db.questions.bulkAdd(defaultQuestions)
     questions = await db.questions.orderBy('sortOrder').toArray()
   }
   return questions

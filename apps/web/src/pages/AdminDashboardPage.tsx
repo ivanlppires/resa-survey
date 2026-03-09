@@ -270,12 +270,63 @@ const sectionLabels: Record<string, string> = {
   environmental: 'Ambiental',
 }
 
-const typeLabels: Record<string, string> = {
-  single_choice: 'Escolha única',
-  multiple_choice: 'Múltipla escolha',
-  yes_no: 'Sim/Não',
-  scale: 'Escala',
-  text: 'Texto',
+const typeConfig: Record<string, { label: string; short: string; icon: React.ReactNode; color: string }> = {
+  single_choice: {
+    label: 'Escolha única',
+    short: 'Única',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+    color: 'text-apple-blue bg-apple-blue/10',
+  },
+  multiple_choice: {
+    label: 'Múltipla escolha',
+    short: 'Múltipla',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="4" />
+        <path d="M8 12l2.5 2.5L16 9" />
+      </svg>
+    ),
+    color: 'text-apple-purple bg-apple-purple/10',
+  },
+  yes_no: {
+    label: 'Sim/Não',
+    short: 'S/N',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 12h8" />
+        <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z" />
+        <path d="M12 8v8" />
+      </svg>
+    ),
+    color: 'text-apple-orange bg-apple-orange/10',
+  },
+  scale: {
+    label: 'Escala',
+    short: 'Escala',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <path d="M3 18h4v-4H3zM10 18h4v-8h-4zM17 18h4V6h-4z" />
+      </svg>
+    ),
+    color: 'text-apple-green bg-apple-green/10',
+  },
+  text: {
+    label: 'Texto',
+    short: 'Texto',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <path d="M4 7V4h16v3" />
+        <path d="M12 4v16" />
+        <path d="M8 20h8" />
+      </svg>
+    ),
+    color: 'text-apple-secondary bg-apple-text/5',
+  },
 }
 
 function QuestionsTab() {
@@ -390,7 +441,7 @@ function QuestionsTab() {
       </div>
 
       {/* Filter chips */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+      <div className="grid grid-cols-4 gap-1.5">
         {filterChips.map((chip) => {
           const active = filterSection === chip.key
           return (
@@ -398,10 +449,10 @@ function QuestionsTab() {
               key={chip.key}
               whileTap={{ scale: 0.95 }}
               onClick={() => setFilterSection(chip.key)}
-              className={`flex items-center gap-1.5 px-3.5 h-9 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all shrink-0 ${
+              className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-semibold transition-all ${
                 active
                   ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(34,163,82,0.25)]'
-                  : 'bg-apple-card text-apple-secondary shadow-[0_1px_3px_rgba(0,0,0,0.04),0_2px_8px_rgba(0,0,0,0.04)] hover:bg-apple-text/4'
+                  : 'bg-apple-card text-apple-secondary shadow-[0_1px_3px_rgba(0,0,0,0.04),0_2px_8px_rgba(0,0,0,0.04)]'
               }`}
             >
               {chip.icon}
@@ -452,13 +503,23 @@ function QuestionsTab() {
               <>
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[12px] font-bold text-apple-green">Q{q.number}</span>
-                      <span className="text-[11px] font-semibold px-2 py-[2px] rounded-full bg-apple-text/5 text-apple-secondary">
-                        {typeLabels[q.type] ?? q.type}
-                      </span>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="text-[12px] font-bold text-apple-green shrink-0">Q{q.number}</span>
+                      {(() => {
+                        const tc = typeConfig[q.type]
+                        return tc ? (
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-[2px] rounded-full ${tc.color}`}>
+                            {tc.icon}
+                            <span>{tc.short}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-semibold px-2 py-[2px] rounded-full bg-apple-text/5 text-apple-secondary">
+                            {q.type}
+                          </span>
+                        )
+                      })()}
                       {filterSection === 'all' && (
-                        <span className="text-[11px] font-semibold px-2 py-[2px] rounded-full bg-apple-blue/8 text-apple-blue">
+                        <span className="text-[11px] font-semibold px-1.5 py-[2px] rounded-full bg-apple-blue/8 text-apple-blue truncate">
                           {sectionLabels[q.section]}
                         </span>
                       )}

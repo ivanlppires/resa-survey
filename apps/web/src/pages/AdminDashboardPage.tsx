@@ -328,8 +328,56 @@ function QuestionsTab() {
 
   if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
 
-  const sections = ['all', 'socioeconomic', 'behavioral', 'environmental']
-  const sectionIndex = sections.indexOf(filterSection)
+  const filterChips: { key: string; label: string; icon: React.ReactNode }[] = [
+    {
+      key: 'all',
+      label: 'Todas',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      ),
+    },
+    {
+      key: 'socioeconomic',
+      label: 'Social',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="10" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      key: 'behavioral',
+      label: 'Comporta.',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2a7 7 0 0 1 7 7c0 3-2 5.5-4 7.5L12 20l-3-3.5C7 14.5 5 12 5 9a7 7 0 0 1 7-7z" />
+          <circle cx="12" cy="9" r="2" />
+        </svg>
+      ),
+    },
+    {
+      key: 'environmental',
+      label: 'Ambiental',
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 8c.7-1 1-2.2 1-3.5C18 2.5 16.5 1 14.5 1c-1.2 0-2.3.5-3 1.3A4.5 4.5 0 0 0 5 4.5C5 6.3 5.7 7.5 7 9" />
+          <path d="M12 22V10" />
+          <path d="M7 15h10" />
+          <path d="M9 12h6" />
+          <path d="M8 18h8" />
+        </svg>
+      ),
+    },
+  ]
+
   const filtered = filterSection === 'all' ? questions : questions.filter(q => q.section === filterSection)
   const activeCount = questions.filter(q => q.active).length
 
@@ -341,28 +389,26 @@ function QuestionsTab() {
         </p>
       </div>
 
-      {/* Section filter - scrollable on mobile */}
-      <div className="relative flex bg-apple-text/6 rounded-[10px] p-[2px]">
-        <motion.div
-          className="absolute top-[2px] bottom-[2px] bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
-          initial={false}
-          animate={{
-            width: `calc(${100 / sections.length}% - 2px)`,
-            left: `calc(${(sectionIndex * 100) / sections.length}% + 1px)`,
-          }}
-          transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-        />
-        {sections.map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilterSection(s)}
-            className={`relative z-10 flex-1 text-[12px] font-semibold py-2 rounded-[8px] transition-colors duration-200 ${
-              filterSection === s ? 'text-apple-text' : 'text-apple-secondary'
-            }`}
-          >
-            {s === 'all' ? 'Todas' : sectionLabels[s]}
-          </button>
-        ))}
+      {/* Filter chips */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+        {filterChips.map((chip) => {
+          const active = filterSection === chip.key
+          return (
+            <motion.button
+              key={chip.key}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setFilterSection(chip.key)}
+              className={`flex items-center gap-1.5 px-3.5 h-9 rounded-full text-[13px] font-semibold whitespace-nowrap transition-all shrink-0 ${
+                active
+                  ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(34,163,82,0.25)]'
+                  : 'bg-apple-card text-apple-secondary shadow-[0_1px_3px_rgba(0,0,0,0.04),0_2px_8px_rgba(0,0,0,0.04)] hover:bg-apple-text/4'
+              }`}
+            >
+              {chip.icon}
+              {chip.label}
+            </motion.button>
+          )
+        })}
       </div>
 
       <div className="space-y-2">

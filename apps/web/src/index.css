@@ -64,6 +64,15 @@ input, select, textarea, button {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
+/* Hide scrollbar but keep scroll */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* PWA standalone mode */
 @media (display-mode: standalone) {
   body {

@@ -60,6 +60,23 @@ export async function authRoutes(app: FastifyInstance) {
     return user
   })
 
+  app.put('/api/auth/password', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const body = z.object({
+      currentPassword: z.string(),
+      newPassword: z.string().min(6),
+    }).parse(request.body)
+
+    const [user] = await db.select().from(users).where(eq(users.id, request.user.id))
+    if (!user) return reply.status(404).send({ error: 'Usuário não encontrado' })
+
+    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash)
+    if (!valid) return reply.status(401).send({ error: 'Senha atual incorreta' })
+
+    const passwordHash = await bcrypt.hash(body.newPassword, 10)
+    await db.update(users).set({ passwordHash }).where(eq(users.id, request.user.id))
+    return { success: true }
+  })
+
   app.get('/api/admin/users', { preHandler: [app.requireAdmin] }, async () => {
     return db.select({
       id: users.id,

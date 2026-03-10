@@ -39,13 +39,7 @@ export default function LoginPage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="w-[72px] h-[72px] rounded-[20px] bg-apple-green/10 flex items-center justify-center mx-auto mb-5">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#22A352" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-                <path d="M8 12l2.5 2.5L16 9"/>
-              </svg>
-            </div>
-            <h1 className="text-[34px] font-extrabold tracking-tight text-apple-text">RESA</h1>
+            <img src="/logo-resa.png" alt="RESA" className="h-20 mx-auto mb-3" />
             <p className="text-[15px] text-apple-secondary mt-1.5">Pesquisa Socioeconômica e Ambiental</p>
           </motion.div>
         </div>

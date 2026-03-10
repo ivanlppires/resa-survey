@@ -192,40 +192,42 @@ function DestructiveSheet({ open, title, message, onConfirm, onCancel }: {
           onClick={onCancel}
         >
           <motion.div
-            initial={{ opacity: 0, y: 80 }}
+            initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 80 }}
+            exit={{ opacity: 0, y: 100 }}
             transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-            className="w-full sm:max-w-[340px] px-3 pb-3 safe-bottom"
+            className="bg-apple-card w-full sm:max-w-[380px] rounded-t-2xl sm:rounded-2xl shadow-[0_-4px_40px_rgba(0,0,0,0.12)]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Action group */}
-            <div className="bg-apple-card rounded-2xl overflow-hidden shadow-[0_-2px_20px_rgba(0,0,0,0.08)]">
-              <div className="px-5 pt-5 pb-3 text-center">
-                <div className="w-11 h-11 rounded-full bg-apple-red/10 flex items-center justify-center mx-auto mb-3">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    <path d="M10 11v6M14 11v6" />
-                  </svg>
-                </div>
-                <p className="text-[16px] font-bold text-apple-text">{title}</p>
-                <p className="text-[14px] text-apple-secondary mt-1 leading-snug">{message}</p>
+            {/* Drag handle */}
+            <div className="w-10 h-1 rounded-full bg-apple-text/10 mx-auto mt-2.5 mb-1 sm:hidden" />
+
+            <div className="px-5 pt-4 pb-3 text-center">
+              <div className="w-11 h-11 rounded-full bg-apple-red/10 flex items-center justify-center mx-auto mb-3">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E53E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
               </div>
-              <div className="h-px bg-apple-separator" />
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={onConfirm}
-                className="w-full py-3.5 text-[17px] font-semibold text-apple-red active:bg-apple-red/5 transition-colors"
-              >
-                Excluir
-              </motion.button>
+              <p className="text-[16px] font-bold text-apple-text">{title}</p>
+              <p className="text-[14px] text-apple-secondary mt-1 leading-snug">{message}</p>
             </div>
 
-            {/* Cancel button - separate card */}
+            <div className="h-px bg-apple-separator" />
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={onConfirm}
+              className="w-full py-3.5 text-[17px] font-semibold text-apple-red active:bg-apple-red/5 transition-colors"
+            >
+              Excluir
+            </motion.button>
+
+            <div className="h-px bg-apple-separator" />
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={onCancel}
-              className="w-full mt-2 py-3.5 text-[17px] font-semibold text-apple-blue bg-apple-card rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] active:bg-apple-text/3 transition-colors"
+              className="w-full py-3.5 text-[17px] font-semibold text-apple-blue active:bg-apple-text/3 transition-colors"
+              style={{ paddingBottom: 'calc(0.875rem + env(safe-area-inset-bottom, 0px))' }}
             >
               Cancelar
             </motion.button>
@@ -996,21 +998,23 @@ function UsersTab() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="bg-apple-card rounded-t-3xl sm:rounded-3xl p-5 w-full sm:max-w-md shadow-[0_-4px_40px_rgba(0,0,0,0.15)] sm:shadow-[0_24px_80px_rgba(0,0,0,0.2)] safe-bottom max-h-[85dvh] flex flex-col"
+              className="bg-apple-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-[0_-4px_40px_rgba(0,0,0,0.15)] sm:shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Drag handle for mobile */}
-              <div className="w-10 h-1 rounded-full bg-apple-text/10 mx-auto mb-4 sm:hidden" />
+              <div className="w-10 h-1 rounded-full bg-apple-text/10 mx-auto mt-2.5 mb-1 sm:hidden" />
 
-              <h3 className="text-[17px] font-bold text-apple-text mb-1">Assentamentos Vinculados</h3>
-              <p className="text-[13px] text-apple-secondary mb-4">
-                {userList.find((u) => u.id === assignUserId)?.name}
-              </p>
+              <div className="px-5 pt-3">
+                <h3 className="text-[17px] font-bold text-apple-text mb-1">Assentamentos Vinculados</h3>
+                <p className="text-[13px] text-apple-secondary mb-4">
+                  {userList.find((u) => u.id === assignUserId)?.name}
+                </p>
+              </div>
 
               {allSettlements.length === 0 ? (
-                <p className="text-[14px] text-apple-tertiary text-center py-6">Nenhum assentamento cadastrado.</p>
+                <p className="text-[14px] text-apple-tertiary text-center py-6 px-5">Nenhum assentamento cadastrado.</p>
               ) : (
-                <div className="space-y-2 flex-1 overflow-y-auto -mx-1 px-1">
+                <div className="space-y-2 flex-1 overflow-y-auto px-5">
                   {allSettlements.map((s) => {
                     const selected = assignedIds.includes(s.id)
                     return (
@@ -1049,7 +1053,7 @@ function UsersTab() {
                 </div>
               )}
 
-              <div className="flex gap-3 mt-5">
+              <div className="flex gap-3 px-5 pt-4 pb-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={saveAssignments}

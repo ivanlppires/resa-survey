@@ -188,15 +188,15 @@ function DestructiveSheet({ open, title, message, onConfirm, onCancel }: {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
           onClick={onCancel}
         >
           <motion.div
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 100 }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-            className="bg-apple-card w-full sm:max-w-[380px] rounded-t-2xl sm:rounded-2xl shadow-[0_-4px_40px_rgba(0,0,0,0.12)]"
+            className="absolute bottom-0 left-0 right-0 sm:relative sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-apple-card w-full sm:max-w-[380px] rounded-t-2xl sm:rounded-2xl shadow-[0_-4px_40px_rgba(0,0,0,0.12)]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drag handle */}
@@ -990,15 +990,15 @@ function UsersTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
             onClick={() => setAssignUserId(null)}
           >
             <motion.div
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 100 }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="bg-apple-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-[0_-4px_40px_rgba(0,0,0,0.15)] sm:shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col"
+              className="absolute bottom-0 left-0 right-0 sm:relative sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-apple-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-[0_-4px_40px_rgba(0,0,0,0.15)] sm:shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-h-[85dvh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Drag handle for mobile */}

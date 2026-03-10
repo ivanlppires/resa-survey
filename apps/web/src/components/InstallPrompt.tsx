@@ -128,24 +128,26 @@ export default function InstallPrompt() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed bottom-4 left-4 right-4 z-50 safe-bottom"
+        className="fixed bottom-0 left-0 right-0 z-50"
       >
-        <div className="max-w-lg mx-auto bg-apple-card rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] p-4 flex items-center gap-4">
-          <img src="/icon-192.png" alt="RESA" className="w-12 h-12 rounded-xl flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-semibold text-apple-text">Instalar RESA Survey</p>
-            <p className="text-[13px] text-apple-secondary">Acesse offline direto da tela inicial</p>
+        <div className="max-w-lg mx-auto bg-apple-card rounded-t-2xl shadow-[0_-4px_40px_rgba(0,0,0,0.12)] px-5 pt-5 pb-5 safe-bottom">
+          <div className="flex items-center gap-3.5 mb-4">
+            <img src="/icon-192.png" alt="RESA" className="w-14 h-14 rounded-2xl flex-shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.08)]" />
+            <div className="min-w-0">
+              <p className="text-[17px] font-bold text-apple-text">RESA Survey</p>
+              <p className="text-[14px] text-apple-secondary mt-0.5">Acesse offline direto da tela inicial</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex gap-2.5">
             <button
               onClick={handleDismiss}
-              className="text-[14px] font-semibold text-apple-secondary px-3 py-2 rounded-lg hover:bg-apple-text/5 transition-colors"
+              className="flex-1 h-12 rounded-xl bg-apple-text/5 text-[15px] font-semibold text-apple-secondary hover:bg-apple-text/8 transition-colors"
             >
               Agora não
             </button>
             <button
               onClick={isIOS ? () => setShowIOSGuide(true) : handleInstall}
-              className="text-[14px] font-semibold text-white bg-apple-green px-4 py-2 rounded-lg hover:bg-apple-green-hover transition-colors shadow-[0_2px_8px_rgba(34,163,82,0.3)]"
+              className="flex-1 h-12 rounded-xl bg-apple-green text-white text-[15px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_8px_rgba(34,163,82,0.3)]"
             >
               Instalar
             </button>

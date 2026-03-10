@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../lib/auth'
 import { db, type LocalSurvey } from '../lib/db'
-import { syncCompletedSurveys, syncQuestions } from '../lib/sync'
+import { syncCompletedSurveys, syncQuestions, cleanupStaleSurveys, deleteLocalSurvey } from '../lib/sync'
 import ChangePasswordModal from '../components/ChangePasswordModal'
 
 const statusLabels: Record<string, string> = {
@@ -26,10 +27,12 @@ export default function SurveyListPage() {
   const [surveys, setSurveys] = useState<LocalSurvey[]>([])
   const [syncing, setSyncing] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadSurveys()
     syncQuestions()
+    cleanupStaleSurveys().then(() => loadSurveys())
   }, [])
 
   async function loadSurveys() {
@@ -41,10 +44,17 @@ export default function SurveyListPage() {
     setSyncing(true)
     try {
       await syncCompletedSurveys()
+      await cleanupStaleSurveys()
       await loadSurveys()
     } finally {
       setSyncing(false)
     }
+  }
+
+  async function handleDelete(localId: string) {
+    await deleteLocalSurvey(localId)
+    setDeletingId(null)
+    await loadSurveys()
   }
 
   return (
@@ -134,10 +144,11 @@ export default function SurveyListPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.3 }}
+                className="flex items-center gap-2"
               >
                 <Link
                   to={s.status === 'synced' ? '#' : `/survey/${s.localId}`}
-                  className="flex items-center justify-between bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
+                  className="flex-1 flex items-center justify-between bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform min-w-0"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-[16px] font-semibold text-apple-text truncate">{s.settlementName}</p>
@@ -156,6 +167,17 @@ export default function SurveyListPage() {
                     )}
                   </div>
                 </Link>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setDeletingId(s.localId)}
+                  className="w-9 h-9 rounded-xl bg-apple-red/8 flex items-center justify-center text-apple-red hover:bg-apple-red/15 transition-colors flex-shrink-0"
+                  title="Excluir questionário"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </motion.button>
               </motion.div>
             ))}
           </div>
@@ -182,6 +204,50 @@ export default function SurveyListPage() {
 
       {showPasswordModal && (
         <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
+
+      {deletingId && createPortal(
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setDeletingId(null)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 380 }}
+              className="w-full max-w-lg bg-apple-card rounded-t-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 pt-5 pb-3 text-center">
+                <p className="text-[17px] font-bold text-apple-text">Excluir Questionário</p>
+                <p className="text-[14px] text-apple-secondary mt-1">
+                  Tem certeza? Os dados locais deste questionário serão perdidos.
+                </p>
+              </div>
+              <div className="px-5 pb-5 space-y-2">
+                <button
+                  onClick={() => handleDelete(deletingId)}
+                  className="w-full h-12 rounded-xl bg-apple-red text-white text-[16px] font-semibold hover:bg-apple-red/90 transition-colors"
+                >
+                  Excluir
+                </button>
+                <button
+                  onClick={() => setDeletingId(null)}
+                  className="w-full h-12 rounded-xl bg-apple-text/5 text-[16px] font-semibold text-apple-text hover:bg-apple-text/8 transition-colors"
+                  style={{ marginBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body
       )}
     </div>
   )

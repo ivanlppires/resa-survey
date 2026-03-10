@@ -1,6 +1,11 @@
 import { db, type LocalQuestion } from './db'
 import { apiFetch } from './api'
 
+interface Settlement {
+  id: number
+  name: string
+}
+
 export async function syncQuestions(): Promise<void> {
   try {
     const questions = await apiFetch<LocalQuestion[]>('/questions')
@@ -9,6 +14,38 @@ export async function syncQuestions(): Promise<void> {
   } catch {
     // Offline — use cached questions
   }
+}
+
+/** Remove local surveys whose settlement was deleted on the server, and clean up old synced surveys */
+export async function cleanupStaleSurveys(): Promise<number> {
+  try {
+    const settlements = await apiFetch<Settlement[]>('/settlements')
+    const validIds = new Set(settlements.map((s) => s.id))
+
+    // Find orphaned surveys (settlement no longer exists)
+    const allSurveys = await db.surveys.toArray()
+    const orphaned = allSurveys.filter((s) => !validIds.has(s.settlementId))
+
+    // Also clean up synced surveys older than 7 days (already on server)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const oldSynced = allSurveys.filter((s) => s.status === 'synced' && s.syncedAt && s.syncedAt < sevenDaysAgo)
+
+    const toDelete = [...orphaned, ...oldSynced]
+    for (const survey of toDelete) {
+      await db.responses.where('surveyLocalId').equals(survey.localId).delete()
+      await db.surveys.where('localId').equals(survey.localId).delete()
+    }
+
+    return toDelete.length
+  } catch {
+    return 0 // Offline — skip cleanup
+  }
+}
+
+/** Delete a local survey and its responses */
+export async function deleteLocalSurvey(localId: string): Promise<void> {
+  await db.responses.where('surveyLocalId').equals(localId).delete()
+  await db.surveys.where('localId').equals(localId).delete()
 }
 
 export async function getQuestions(): Promise<LocalQuestion[]> {

@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
         <div className="max-w-2xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <div>
             <h1 className="text-[22px] font-bold text-apple-text tracking-tight">RESA Admin</h1>
-            <p className="text-[13px] text-apple-secondary">{user?.name}</p>
+            <p className="text-[11px] text-apple-secondary leading-tight">Rede de Pesquisa para uma Economia Sustentável da Amazônia</p>
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}

@@ -40,13 +40,16 @@ export default function InstallPrompt() {
       return
     }
 
-    // Android / Desktop Chrome: always listen for native install prompt
+    // Android / Desktop Chrome: show mini button immediately if dismissed,
+    // and always capture the beforeinstallprompt in background
+    if (recentlyDismissed) {
+      setShowMiniButton(true)
+    }
+
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      if (recentlyDismissed) {
-        setShowMiniButton(true)
-      } else {
+      if (!recentlyDismissed) {
         setTimeout(() => setShowBanner(true), 1500)
       }
     }

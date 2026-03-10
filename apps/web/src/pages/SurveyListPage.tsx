@@ -57,6 +57,15 @@ export default function SurveyListPage() {
             <p className="text-[13px] text-apple-secondary">{user?.name}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              to="/survey/new"
+              className="hidden md:flex text-[14px] font-semibold h-9 px-4 rounded-full bg-apple-green text-white hover:bg-apple-green-hover transition-colors items-center gap-1.5 shadow-[0_2px_8px_rgba(34,163,82,0.25)]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Novo Questionário
+            </Link>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleSync}
@@ -145,8 +154,8 @@ export default function SurveyListPage() {
         )}
       </main>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-5 safe-bottom z-20 max-w-lg" style={{ right: 'max(1.25rem, calc((100vw - 32rem) / 2 + 1.25rem))' }}>
+      {/* Floating Action Button - mobile only */}
+      <div className="fixed bottom-6 right-5 safe-bottom z-20 max-w-lg md:hidden" style={{ right: 'max(1.25rem, calc((100vw - 32rem) / 2 + 1.25rem))' }}>
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

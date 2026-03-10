@@ -57,15 +57,6 @@ export default function SurveyListPage() {
             <p className="text-[13px] text-apple-secondary">{user?.name}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              to="/survey/new"
-              className="hidden md:flex text-[14px] font-semibold h-9 px-4 rounded-full bg-apple-green text-white hover:bg-apple-green-hover transition-colors items-center gap-1.5 shadow-[0_2px_8px_rgba(34,163,82,0.25)]"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Novo Questionário
-            </Link>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleSync}
@@ -101,7 +92,24 @@ export default function SurveyListPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-lg mx-auto w-full px-5 py-5 pb-28">
+      <main className="flex-1 max-w-lg mx-auto w-full px-5 py-5 pb-28 md:pb-5">
+        {/* Desktop action bar */}
+        <div className="hidden md:flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-[18px] font-bold text-apple-text">Questionários</h2>
+            <p className="text-[13px] text-apple-secondary">{surveys.length} {surveys.length === 1 ? 'registro' : 'registros'}</p>
+          </div>
+          <Link
+            to="/survey/new"
+            className="flex items-center gap-2 h-10 px-5 rounded-xl bg-apple-green text-white text-[14px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_8px_rgba(34,163,82,0.25)]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Novo Questionário
+          </Link>
+        </div>
+
         {surveys.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}

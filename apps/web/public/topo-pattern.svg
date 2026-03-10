@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <defs>
+    <style>
+      path, ellipse { fill: none; stroke: #C8C6BF; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <!-- Contour group 1 - top left cluster -->
+  <ellipse cx="180" cy="160" rx="120" ry="70" stroke-width="0.6" />
+  <ellipse cx="180" cy="160" rx="90" ry="50" stroke-width="0.5" />
+  <ellipse cx="180" cy="160" rx="55" ry="30" stroke-width="0.4" />
+  <ellipse cx="182" cy="158" rx="25" ry="14" stroke-width="0.35" />
+
+  <!-- Contour group 2 - center right -->
+  <path d="M480 320 Q540 280 620 310 Q700 340 720 400 Q740 460 680 500 Q620 540 540 520 Q460 500 440 440 Q420 380 480 320Z" stroke-width="0.6" />
+  <path d="M500 345 Q550 310 615 335 Q680 360 695 410 Q710 460 660 490 Q610 520 545 505 Q480 490 465 440 Q450 390 500 345Z" stroke-width="0.5" />
+  <path d="M520 368 Q560 340 610 358 Q660 376 672 418 Q684 460 642 482 Q600 504 550 492 Q500 480 490 440 Q480 400 520 368Z" stroke-width="0.45" />
+  <path d="M545 390 Q572 372 608 385 Q644 398 652 425 Q660 452 638 468 Q616 484 580 476 Q544 468 536 440 Q528 412 545 390Z" stroke-width="0.4" />
+
+  <!-- Contour group 3 - bottom left -->
+  <path d="M60 580 Q120 520 220 540 Q320 560 350 640 Q380 720 300 770 Q220 800 140 760 Q60 720 40 650 Q20 580 60 580Z" stroke-width="0.6" />
+  <path d="M90 600 Q140 550 225 568 Q310 586 335 650 Q360 714 290 755 Q220 780 150 748 Q80 716 65 658 Q50 600 90 600Z" stroke-width="0.5" />
+  <path d="M118 622 Q160 580 230 595 Q300 610 320 662 Q340 714 280 745 Q220 760 162 734 Q104 708 92 660 Q80 612 118 622Z" stroke-width="0.45" />
+  <path d="M148 648 Q180 618 232 628 Q284 638 298 676 Q312 714 268 735 Q224 742 182 722 Q140 702 134 668 Q128 634 148 648Z" stroke-width="0.4" />
+
+  <!-- Flowing lines - horizontal contours -->
+  <path d="M0 80 Q100 60 200 85 Q300 110 400 90 Q500 70 600 95 Q700 120 800 100" stroke-width="0.5" />
+  <path d="M0 440 Q80 420 180 450 Q280 480 380 455 Q480 430 580 460 Q680 490 800 465" stroke-width="0.5" />
+  <path d="M0 260 Q150 240 250 270 Q350 300 450 275 Q550 250 650 280 Q750 310 800 290" stroke-width="0.45" />
+
+  <!-- Contour group 4 - top right -->
+  <path d="M620 60 Q680 30 740 55 Q800 80 790 140 Q780 200 720 220 Q660 240 610 200 Q560 160 580 100 Q600 40 620 60Z" stroke-width="0.55" />
+  <path d="M635 85 Q680 60 725 80 Q770 100 762 145 Q754 190 710 205 Q666 220 630 190 Q594 160 608 115 Q622 70 635 85Z" stroke-width="0.45" />
+  <path d="M652 108 Q682 90 715 105 Q748 120 742 152 Q736 184 705 194 Q674 204 652 182 Q630 160 638 132 Q646 104 652 108Z" stroke-width="0.38" />
+
+  <!-- Contour group 5 - center left -->
+  <path d="M30 350 Q80 310 160 330 Q240 350 260 410 Q280 470 220 500 Q160 530 90 500 Q20 470 10 410 Q0 350 30 350Z" stroke-width="0.55" />
+  <path d="M55 370 Q95 340 155 355 Q215 370 230 418 Q245 466 198 488 Q151 510 98 486 Q45 462 38 415 Q31 368 55 370Z" stroke-width="0.45" />
+  <path d="M80 392 Q110 370 152 382 Q194 394 205 428 Q216 462 180 478 Q144 494 108 476 Q72 458 68 425 Q64 392 80 392Z" stroke-width="0.38" />
+
+  <!-- Subtle long contour lines spanning width -->
+  <path d="M0 680 Q100 660 220 685 Q340 710 450 690 Q560 670 680 695 Q800 720 800 700" stroke-width="0.4" />
+  <path d="M0 720 Q120 700 240 725 Q360 750 480 730 Q600 710 720 735 Q800 760 800 740" stroke-width="0.35" />
+
+  <!-- Small detail contours -->
+  <ellipse cx="400" cy="180" rx="35" ry="22" stroke-width="0.4" />
+  <ellipse cx="400" cy="180" rx="18" ry="11" stroke-width="0.35" />
+  <ellipse cx="700" cy="580" rx="45" ry="30" stroke-width="0.45" />
+  <ellipse cx="700" cy="580" rx="25" ry="16" stroke-width="0.38" />
+  <ellipse cx="700" cy="580" rx="10" ry="6" stroke-width="0.3" />
+</svg>

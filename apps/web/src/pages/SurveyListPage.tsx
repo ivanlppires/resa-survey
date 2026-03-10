@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../lib/auth'
 import { db, type LocalSurvey } from '../lib/db'
 import { syncCompletedSurveys, syncQuestions } from '../lib/sync'
+import ChangePasswordModal from '../components/ChangePasswordModal'
 
 const statusLabels: Record<string, string> = {
   draft: 'Rascunho',
@@ -24,6 +25,7 @@ export default function SurveyListPage() {
   const navigate = useNavigate()
   const [surveys, setSurveys] = useState<LocalSurvey[]>([])
   const [syncing, setSyncing] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   useEffect(() => {
     loadSurveys()
@@ -54,7 +56,7 @@ export default function SurveyListPage() {
             <h1 className="text-[22px] font-bold text-apple-text tracking-tight">RESA</h1>
             <p className="text-[13px] text-apple-secondary">{user?.name}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleSync}
@@ -65,9 +67,25 @@ export default function SurveyListPage() {
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => { logout(); navigate('/login') }}
-              className="text-[14px] font-semibold h-9 px-4 rounded-full bg-apple-text/5 text-apple-secondary hover:bg-apple-text/8 transition-colors"
+              onClick={() => setShowPasswordModal(true)}
+              className="w-9 h-9 rounded-full bg-apple-text/5 flex items-center justify-center text-apple-secondary hover:bg-apple-text/8 transition-colors"
+              title="Alterar senha"
             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { logout(); navigate('/login') }}
+              className="text-[14px] font-semibold h-9 px-4 rounded-full bg-apple-text/5 text-apple-secondary hover:bg-apple-text/8 transition-colors flex items-center gap-1.5"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
               Sair
             </motion.button>
           </div>
@@ -144,6 +162,10 @@ export default function SurveyListPage() {
           </Link>
         </motion.div>
       </div>
+
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
     </div>
   )
 }

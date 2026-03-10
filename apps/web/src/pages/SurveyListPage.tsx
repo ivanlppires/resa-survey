@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth'
 import { db, type LocalSurvey } from '../lib/db'
 import { syncCompletedSurveys, syncQuestions, cleanupStaleSurveys, deleteLocalSurvey } from '../lib/sync'
 import ChangePasswordModal from '../components/ChangePasswordModal'
+import ToastContainer, { type ToastData } from '../components/Toast'
 
 const statusLabels: Record<string, string> = {
   draft: 'Rascunho',
@@ -28,6 +29,15 @@ export default function SurveyListPage() {
   const [syncing, setSyncing] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<ToastData[]>([])
+
+  const addToast = useCallback((type: ToastData['type'], message: string) => {
+    setToasts((prev) => [...prev, { id: Date.now(), type, message }])
+  }, [])
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }, [])
 
   useEffect(() => {
     loadSurveys()
@@ -43,9 +53,23 @@ export default function SurveyListPage() {
   async function handleSync() {
     setSyncing(true)
     try {
-      await syncCompletedSurveys()
+      const pending = await db.surveys.where('status').equals('completed').count()
+      if (pending === 0) {
+        addToast('info', 'Nenhum questionário pendente')
+        return
+      }
+      const syncedIds = await syncCompletedSurveys()
       await cleanupStaleSurveys()
       await loadSurveys()
+      const failed = pending - syncedIds.length
+      if (syncedIds.length > 0) {
+        addToast('success', `${syncedIds.length} questionário${syncedIds.length > 1 ? 's' : ''} sincronizado${syncedIds.length > 1 ? 's' : ''}`)
+      }
+      if (failed > 0) {
+        addToast('error', `${failed} questionário${failed > 1 ? 's' : ''} falhou ao sincronizar`)
+      }
+    } catch {
+      addToast('error', 'Falha ao sincronizar. Tente novamente.')
     } finally {
       setSyncing(false)
     }
@@ -59,6 +83,7 @@ export default function SurveyListPage() {
 
   return (
     <div className="min-h-dvh flex flex-col">
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       {/* Glass header */}
       <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border safe-top">
         <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center justify-between">

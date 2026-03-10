@@ -31,20 +31,24 @@ export default function InstallPrompt() {
     const dismissed = localStorage.getItem('resa_install_dismissed')
     const recentlyDismissed = dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000
 
-    if (recentlyDismissed) {
-      setShowMiniButton(true)
-      return
-    }
-
     if (isSafari) {
-      setTimeout(() => setShowBanner(true), 2000)
+      if (recentlyDismissed) {
+        setShowMiniButton(true)
+      } else {
+        setTimeout(() => setShowBanner(true), 2000)
+      }
       return
     }
 
+    // Android / Desktop Chrome: always listen for native install prompt
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setTimeout(() => setShowBanner(true), 1500)
+      if (recentlyDismissed) {
+        setShowMiniButton(true)
+      } else {
+        setTimeout(() => setShowBanner(true), 1500)
+      }
     }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)

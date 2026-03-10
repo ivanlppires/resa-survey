@@ -20,13 +20,14 @@ export default function InstallPrompt() {
     const dismissed = localStorage.getItem('resa_install_dismissed')
     if (dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000) return
 
-    // Detect iOS
+    // Detect iOS Safari specifically (not Chrome/Firefox on iOS)
     const ua = navigator.userAgent
     const isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    setIsIOS(isiOS)
+    const isSafari = isiOS && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua)
+    setIsIOS(isSafari)
 
-    if (isiOS) {
-      // iOS doesn't have beforeinstallprompt — show custom guide
+    if (isSafari) {
+      // Only Safari on iOS supports Add to Home Screen
       const isInStandalone = ('standalone' in navigator) && (navigator as unknown as { standalone: boolean }).standalone
       if (!isInStandalone) {
         setTimeout(() => setShowBanner(true), 2000)
@@ -34,7 +35,7 @@ export default function InstallPrompt() {
       return
     }
 
-    // Android / Chrome: listen for install prompt
+    // Android / Desktop Chrome: listen for native install prompt
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)

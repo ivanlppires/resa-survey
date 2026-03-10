@@ -131,13 +131,11 @@ export default function InstallPrompt() {
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         className="fixed bottom-0 left-0 right-0 z-50"
       >
-        <div className="max-w-lg mx-auto bg-apple-card rounded-t-2xl shadow-[0_-4px_40px_rgba(0,0,0,0.12)] px-5 pt-5" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px) + 44px)' }}>
-          <div className="flex items-center gap-3.5 mb-4">
-            <img src="/icon-192.png" alt="RESA" className="w-14 h-14 rounded-2xl flex-shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.08)]" />
-            <div className="min-w-0">
-              <p className="text-[17px] font-bold text-apple-text">RESA Survey</p>
-              <p className="text-[14px] text-apple-secondary mt-0.5">Acesse offline direto da tela inicial</p>
-            </div>
+        <div className="max-w-lg mx-auto bg-apple-card rounded-t-2xl shadow-[0_-4px_40px_rgba(0,0,0,0.12)] px-5 pt-6" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px) + 44px)' }}>
+          <div className="flex flex-col items-center text-center mb-5">
+            <img src="/icon-192.png" alt="RESA" className="w-16 h-16 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.1)] mb-3" />
+            <p className="text-[18px] font-bold text-apple-text">RESA Survey</p>
+            <p className="text-[14px] text-apple-secondary mt-1 leading-snug">Instale o app para acessar offline<br />direto da tela inicial</p>
           </div>
           <div className="flex gap-2.5">
             <button

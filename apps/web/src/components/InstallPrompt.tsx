@@ -11,11 +11,10 @@ export default function InstallPrompt() {
   const [showBanner, setShowBanner] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSGuide, setShowIOSGuide] = useState(false)
-  const [isInstalled, setIsInstalled] = useState(true) // assume installed until checked
+  const [isInstalled, setIsInstalled] = useState(true)
   const [showMiniButton, setShowMiniButton] = useState(false)
 
   useEffect(() => {
-    // Check if already installed as PWA
     const standalone = window.matchMedia('(display-mode: standalone)').matches
     const iosStandalone = ('standalone' in navigator) && (navigator as unknown as { standalone: boolean }).standalone
     if (standalone || iosStandalone) {
@@ -24,18 +23,15 @@ export default function InstallPrompt() {
     }
     setIsInstalled(false)
 
-    // Detect iOS Safari specifically (not Chrome/Firefox on iOS)
     const ua = navigator.userAgent
     const isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     const isSafari = isiOS && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua)
     setIsIOS(isSafari)
 
-    // Check if dismissed recently (24h)
     const dismissed = localStorage.getItem('resa_install_dismissed')
     const recentlyDismissed = dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000
 
     if (recentlyDismissed) {
-      // Show the mini button instead
       setShowMiniButton(true)
       return
     }
@@ -45,7 +41,6 @@ export default function InstallPrompt() {
       return
     }
 
-    // Android / Desktop Chrome: listen for native install prompt
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
@@ -84,7 +79,6 @@ export default function InstallPrompt() {
     setShowMiniButton(false)
   }
 
-  // Don't render anything if installed
   if (isInstalled) return null
 
   // Mini floating button (when banner was dismissed)
@@ -95,7 +89,7 @@ export default function InstallPrompt() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25, delay: 0.5 }}
         onClick={handleMiniClick}
-        className="fixed bottom-20 left-4 z-40 w-10 h-10 rounded-full bg-apple-card/80 backdrop-blur-lg shadow-[0_2px_12px_rgba(0,0,0,0.1)] flex items-center justify-center text-apple-secondary hover:text-apple-text hover:bg-apple-card transition-colors safe-bottom"
+        className="fixed bottom-20 left-4 md:bottom-6 md:right-6 md:left-auto z-40 w-10 h-10 rounded-full bg-apple-card/80 backdrop-blur-lg shadow-[0_2px_12px_rgba(0,0,0,0.1)] flex items-center justify-center text-apple-secondary hover:text-apple-text hover:bg-apple-card transition-colors safe-bottom"
         title="Instalar app"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -109,7 +103,7 @@ export default function InstallPrompt() {
 
   if (!showBanner) return null
 
-  // iOS guide modal
+  // iOS guide modal (always bottom sheet)
   if (isIOS && showIOSGuide) {
     return (
       <AnimatePresence>
@@ -166,15 +160,17 @@ export default function InstallPrompt() {
     )
   }
 
-  // Bottom banner (Android + iOS initial)
+  // Desktop: compact toast (bottom-right)
+  // Mobile: full-width bottom sheet
   return (
     <AnimatePresence>
+      {/* Mobile bottom sheet */}
       <motion.div
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 z-50"
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
       >
         <div className="max-w-lg mx-auto bg-apple-card rounded-t-2xl shadow-[0_-4px_40px_rgba(0,0,0,0.12)] px-5 pt-6" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px) + 44px)' }}>
           <div className="flex flex-col items-center text-center mb-5">
@@ -195,6 +191,50 @@ export default function InstallPrompt() {
             >
               Instalar
             </button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Desktop toast */}
+      <motion.div
+        initial={{ x: 80, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 80, opacity: 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className="fixed bottom-6 right-6 z-50 hidden md:block"
+      >
+        <div className="w-[380px] bg-apple-card rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] overflow-hidden">
+          {/* Close button */}
+          <button
+            onClick={handleDismiss}
+            className="absolute top-3 right-3 w-7 h-7 rounded-full bg-apple-text/5 flex items-center justify-center text-apple-tertiary hover:text-apple-text hover:bg-apple-text/10 transition-colors z-10"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M2 2l8 8M10 2l-8 8" />
+            </svg>
+          </button>
+          <div className="p-5">
+            <div className="flex items-center gap-4">
+              <img src="/icon-192.png" alt="RESA" className="w-12 h-12 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex-shrink-0" />
+              <div className="min-w-0 flex-1 pr-4">
+                <p className="text-[15px] font-bold text-apple-text">Instalar RESA Survey</p>
+                <p className="text-[13px] text-apple-secondary mt-0.5 leading-snug">Acesse offline como um app nativo no seu computador</p>
+              </div>
+            </div>
+            <div className="flex gap-2.5 mt-4">
+              <button
+                onClick={handleDismiss}
+                className="flex-1 h-10 rounded-xl bg-apple-text/5 text-[14px] font-semibold text-apple-secondary hover:bg-apple-text/8 transition-colors"
+              >
+                Agora não
+              </button>
+              <button
+                onClick={handleInstall}
+                className="flex-1 h-10 rounded-xl bg-apple-green text-white text-[14px] font-semibold hover:bg-apple-green-hover transition-colors shadow-[0_2px_8px_rgba(34,163,82,0.25)]"
+              >
+                Instalar
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>

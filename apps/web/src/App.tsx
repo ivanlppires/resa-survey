@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import { AuthProvider, useAuth } from './lib/auth'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import InstallPrompt from './components/InstallPrompt'
 import LoginPage from './pages/LoginPage'
 import SurveyListPage from './pages/SurveyListPage'
 import NewSurveyPage from './pages/NewSurveyPage'
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/survey/:localId" element={<ProtectedRoute><SurveyPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <InstallPrompt />
       </AuthProvider>
     </BrowserRouter>
   )

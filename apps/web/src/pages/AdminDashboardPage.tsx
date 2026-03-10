@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../lib/auth'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -181,7 +182,7 @@ function DestructiveSheet({ open, title, message, onConfirm, onCancel }: {
   onConfirm: () => void
   onCancel: () => void
 }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -234,7 +235,8 @@ function DestructiveSheet({ open, title, message, onConfirm, onCancel }: {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }
 
@@ -984,7 +986,7 @@ function UsersTab() {
       )}
 
       {/* Settlement assignment modal */}
-      <AnimatePresence>
+      {createPortal(<AnimatePresence>
         {assignUserId !== null && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1073,7 +1075,7 @@ function UsersTab() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>, document.body)}
 
       <AnimatePresence mode="wait">
         {!showForm ? (

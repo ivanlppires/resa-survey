@@ -135,10 +135,38 @@ export default function AdminDashboardPage() {
             Sair
           </motion.button>
         </div>
+
+        {/* Desktop tabs - hidden on mobile */}
+        <nav className="hidden md:block max-w-2xl mx-auto px-5">
+          <div className="flex gap-1">
+            {tabConfig.map((t) => {
+              const isActive = tab === t.key
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`relative flex items-center gap-2 px-4 py-2.5 text-[14px] font-semibold transition-colors ${
+                    isActive ? 'text-apple-green' : 'text-apple-secondary hover:text-apple-text'
+                  }`}
+                >
+                  {t.icon(isActive)}
+                  {t.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="desktop-tab-indicator"
+                      className="absolute bottom-0 left-2 right-2 h-[2px] bg-apple-green rounded-full"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </nav>
       </header>
 
-      {/* Content with bottom padding for tab bar */}
-      <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-5 pb-24">
+      {/* Content with bottom padding for tab bar on mobile */}
+      <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-5 pb-24 md:pb-5">
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -155,8 +183,8 @@ export default function AdminDashboardPage() {
         </AnimatePresence>
       </main>
 
-      {/* Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-apple-glass backdrop-blur-2xl border-t border-apple-glass-border z-20">
+      {/* Bottom Tab Bar - mobile only */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-apple-glass backdrop-blur-2xl border-t border-apple-glass-border z-20 md:hidden">
         <div className="max-w-2xl mx-auto flex safe-bottom">
           {tabConfig.map((t) => {
             const isActive = tab === t.key

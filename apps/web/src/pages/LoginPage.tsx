@@ -39,7 +39,7 @@ export default function LoginPage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <img src="/logo-resa.png" alt="RESA" className="h-20 mx-auto mb-3" />
+            <img src="/logo-resa.png" alt="RESA" className="h-36 mx-auto mb-3" />
             <p className="text-[15px] text-apple-secondary mt-1.5">Pesquisa Socioeconômica e Ambiental</p>
           </motion.div>
         </div>

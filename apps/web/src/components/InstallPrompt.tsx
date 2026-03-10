@@ -11,14 +11,18 @@ export default function InstallPrompt() {
   const [showBanner, setShowBanner] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSGuide, setShowIOSGuide] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(true) // assume installed until checked
+  const [showMiniButton, setShowMiniButton] = useState(false)
 
   useEffect(() => {
-    // Don't show if already installed as PWA
-    if (window.matchMedia('(display-mode: standalone)').matches) return
-
-    // Don't show if dismissed recently (24h)
-    const dismissed = localStorage.getItem('resa_install_dismissed')
-    if (dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000) return
+    // Check if already installed as PWA
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+    const iosStandalone = ('standalone' in navigator) && (navigator as unknown as { standalone: boolean }).standalone
+    if (standalone || iosStandalone) {
+      setIsInstalled(true)
+      return
+    }
+    setIsInstalled(false)
 
     // Detect iOS Safari specifically (not Chrome/Firefox on iOS)
     const ua = navigator.userAgent
@@ -26,12 +30,18 @@ export default function InstallPrompt() {
     const isSafari = isiOS && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua)
     setIsIOS(isSafari)
 
+    // Check if dismissed recently (24h)
+    const dismissed = localStorage.getItem('resa_install_dismissed')
+    const recentlyDismissed = dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000
+
+    if (recentlyDismissed) {
+      // Show the mini button instead
+      setShowMiniButton(true)
+      return
+    }
+
     if (isSafari) {
-      // Only Safari on iOS supports Add to Home Screen
-      const isInStandalone = ('standalone' in navigator) && (navigator as unknown as { standalone: boolean }).standalone
-      if (!isInStandalone) {
-        setTimeout(() => setShowBanner(true), 2000)
-      }
+      setTimeout(() => setShowBanner(true), 2000)
       return
     }
 
@@ -51,6 +61,7 @@ export default function InstallPrompt() {
       const { outcome } = await deferredPrompt.userChoice
       if (outcome === 'accepted') {
         setShowBanner(false)
+        setShowMiniButton(false)
       }
       setDeferredPrompt(null)
     }
@@ -59,7 +70,41 @@ export default function InstallPrompt() {
   const handleDismiss = () => {
     setShowBanner(false)
     setShowIOSGuide(false)
+    setShowMiniButton(true)
     localStorage.setItem('resa_install_dismissed', String(Date.now()))
+  }
+
+  const handleMiniClick = () => {
+    if (isIOS) {
+      setShowIOSGuide(true)
+      setShowBanner(true)
+    } else {
+      setShowBanner(true)
+    }
+    setShowMiniButton(false)
+  }
+
+  // Don't render anything if installed
+  if (isInstalled) return null
+
+  // Mini floating button (when banner was dismissed)
+  if (showMiniButton && !showBanner) {
+    return (
+      <motion.button
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25, delay: 0.5 }}
+        onClick={handleMiniClick}
+        className="fixed bottom-20 left-4 z-40 w-10 h-10 rounded-full bg-apple-card/80 backdrop-blur-lg shadow-[0_2px_12px_rgba(0,0,0,0.1)] flex items-center justify-center text-apple-secondary hover:text-apple-text hover:bg-apple-card transition-colors safe-bottom"
+        title="Instalar app"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      </motion.button>
+    )
   }
 
   if (!showBanner) return null

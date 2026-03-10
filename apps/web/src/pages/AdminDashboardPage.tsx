@@ -114,7 +114,7 @@ export default function AdminDashboardPage() {
   const [tab, setTab] = useState<Tab>('overview')
 
   return (
-    <div className="min-h-dvh bg-apple-bg flex flex-col">
+    <div className="min-h-dvh flex flex-col">
       {/* Header */}
       <header className="bg-apple-glass backdrop-blur-2xl sticky top-0 z-10 border-b border-apple-glass-border safe-top">
         <div className="max-w-2xl mx-auto px-5 py-3.5 flex items-center justify-between">

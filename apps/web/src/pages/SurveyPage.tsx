@@ -84,7 +84,7 @@ export default function SurveyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-apple-bg flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <p className="text-[15px] text-apple-secondary">Carregando...</p>
       </div>
     )
@@ -93,7 +93,7 @@ export default function SurveyPage() {
   const activeIndex = sections.indexOf(currentSection)
 
   return (
-    <div className="min-h-dvh bg-apple-bg flex flex-col">
+    <div className="min-h-dvh flex flex-col">
       {/* Progress bar */}
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-apple-text/5 z-50">
         <motion.div

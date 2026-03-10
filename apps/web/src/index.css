@@ -39,19 +39,18 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Topographic background pattern + depth gradient */
+/* Biomes background - Amazônia (green), Cerrado (gold), Pantanal (teal) */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    url('/topo-pattern.svg') repeat,
-    radial-gradient(ellipse at 20% 0%, rgba(34, 163, 82, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(34, 163, 82, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 5% 15%, rgba(22, 101, 52, 0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 45% at 92% 8%, rgba(180, 140, 20, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 50% at 85% 85%, rgba(15, 118, 110, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 30% at 50% 50%, rgba(22, 101, 52, 0.03) 0%, transparent 70%),
     var(--color-apple-bg);
-  background-size: 800px 800px, 100% 100%, 100% 100%, auto;
-  opacity: 1;
   pointer-events: none;
 }
 

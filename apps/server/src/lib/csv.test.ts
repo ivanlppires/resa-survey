@@ -38,6 +38,15 @@ describe('csvEscape', () => {
     expect(csvEscape('diz "oi"')).toBe('"diz ""oi"""')
     expect(csvEscape('simples')).toBe('simples')
   })
+
+  it('neutralizes formula injection but keeps negative numbers intact', () => {
+    expect(csvEscape('=1+1')).toBe("'=1+1")
+    expect(csvEscape('+55 65 99999')).toBe("'+55 65 99999")
+    expect(csvEscape('@soma')).toBe("'@soma")
+    expect(csvEscape('-cmd|calc')).toBe("'-cmd|calc")
+    expect(csvEscape('-16.07')).toBe('-16.07')
+    expect(csvEscape('-16,07')).toBe('-16,07')
+  })
 })
 
 describe('formatValue', () => {

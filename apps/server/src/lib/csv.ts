@@ -27,9 +27,17 @@ const META_HEADERS = [
   'criado_em', 'concluido_em', 'sincronizado_em',
 ]
 
-export function csvEscape(field: string): string {
-  if (/[";\n\r]/.test(field)) return '"' + field.replace(/"/g, '""') + '"'
+/** Neutraliza injeção de fórmula (Excel/LibreOffice) sem corromper números negativos. */
+function guardFormula(field: string): string {
+  if (/^[=+@\t\r]/.test(field)) return `'${field}`
+  if (field.startsWith('-') && !/^-\d+([.,]\d+)?$/.test(field)) return `'${field}`
   return field
+}
+
+export function csvEscape(field: string): string {
+  const guarded = guardFormula(field)
+  if (/[";\n\r]/.test(guarded)) return '"' + guarded.replace(/"/g, '""') + '"'
+  return guarded
 }
 
 export function formatValue(value: unknown): string {

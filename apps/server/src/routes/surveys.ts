@@ -72,9 +72,14 @@ export async function surveyRoutes(app: FastifyInstance) {
       const localId = item.metadata.localId ?? null
       try {
         if (localId) {
-          const [existing] = await db.select({ id: surveys.id }).from(surveys).where(eq(surveys.clientId, localId))
+          const [existing] = await db.select({ id: surveys.id, interviewerId: surveys.interviewerId })
+            .from(surveys).where(eq(surveys.clientId, localId))
           if (existing) {
-            syncedLocalIds.push(localId)
+            if (existing.interviewerId === request.user.id) {
+              syncedLocalIds.push(localId)
+            } else {
+              errors.push({ localId, message: 'localId já registrado por outro usuário' })
+            }
             continue
           }
         }
@@ -115,7 +120,14 @@ export async function surveyRoutes(app: FastifyInstance) {
         if (localId) syncedLocalIds.push(localId)
       } catch (err) {
         if (localId && isClientIdConflict(err)) {
-          syncedLocalIds.push(localId)
+          // Corrida entre requisições concorrentes: confirma apenas se o registro é do próprio usuário
+          const [existing] = await db.select({ interviewerId: surveys.interviewerId })
+            .from(surveys).where(eq(surveys.clientId, localId))
+          if (existing && existing.interviewerId === request.user.id) {
+            syncedLocalIds.push(localId)
+          } else {
+            errors.push({ localId, message: 'localId já registrado por outro usuário' })
+          }
         } else {
           errors.push({
             localId: localId ?? `sem-localId-${i}`,

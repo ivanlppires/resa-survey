@@ -4,29 +4,7 @@ import { db } from '../db/index.js'
 import { surveys, responses, syncLog } from '../db/schema.js'
 import { eq, desc } from 'drizzle-orm'
 import crypto from 'node:crypto'
-
-const syncPayloadSchema = z.object({
-  surveys: z.array(z.object({
-    metadata: z.object({
-      settlementId: z.number(),
-      lotNumber: z.string().nullable().optional(),
-      gpsLat: z.number().nullable().optional(),
-      gpsLng: z.number().nullable().optional(),
-      status: z.enum(['draft', 'in_progress', 'completed', 'synced']),
-      deviceInfo: z.string().nullable().optional(),
-      createdAt: z.string(),
-      updatedAt: z.string(),
-      completedAt: z.string().nullable().optional(),
-    }),
-    responses: z.array(z.object({
-      questionKey: z.string(),
-      value: z.any(),
-      answeredAt: z.string(),
-    })),
-  })),
-  deviceInfo: z.string(),
-  syncedAt: z.string(),
-})
+import { syncPayloadSchema } from './sync-schema.js'
 
 export async function surveyRoutes(app: FastifyInstance) {
   app.get('/api/surveys', { preHandler: [app.authenticate] }, async (request) => {
@@ -79,58 +57,74 @@ export async function surveyRoutes(app: FastifyInstance) {
 
   app.post('/api/sync', { preHandler: [app.authenticate] }, async (request, reply) => {
     const body = syncPayloadSchema.parse(request.body)
-    const syncedIds: number[] = []
-    const errors: { index: number; message: string }[] = []
+    const payloadHash = crypto.createHash('sha256').update(JSON.stringify(body.surveys)).digest('hex')
+    const syncedLocalIds: string[] = []
+    const errors: { localId: string; message: string }[] = []
 
-    const payloadHash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex')
-
-    const [existingSync] = await db.select().from(syncLog).where(eq(syncLog.payloadHash, payloadHash))
-    if (existingSync) {
-      return { syncedIds: [], errors: [], message: 'Already synced (duplicate payload)' }
+    const isClientIdConflict = (e: unknown): boolean => {
+      if (typeof e !== 'object' || e === null) return false
+      const pg = e as { code?: string; constraint_name?: string; message?: string }
+      return pg.code === '23505' && `${pg.constraint_name ?? ''} ${pg.message ?? ''}`.includes('client_id')
     }
 
     for (let i = 0; i < body.surveys.length; i++) {
-      const surveyData = body.surveys[i]
+      const item = body.surveys[i]
+      const localId = item.metadata.localId ?? null
       try {
-        const [created] = await db.insert(surveys).values({
-          settlementId: surveyData.metadata.settlementId,
-          interviewerId: request.user.id,
-          lotNumber: surveyData.metadata.lotNumber ?? null,
-          gpsLat: surveyData.metadata.gpsLat ?? null,
-          gpsLng: surveyData.metadata.gpsLng ?? null,
-          status: 'synced',
-          deviceInfo: surveyData.metadata.deviceInfo ?? null,
-          createdAt: new Date(surveyData.metadata.createdAt),
-          updatedAt: new Date(surveyData.metadata.updatedAt),
-          completedAt: surveyData.metadata.completedAt ? new Date(surveyData.metadata.completedAt) : null,
-          syncedAt: new Date(),
-        }).returning({ id: surveys.id })
-
-        if (surveyData.responses.length > 0) {
-          await db.insert(responses).values(
-            surveyData.responses.map((r) => ({
-              surveyId: created.id,
-              questionKey: r.questionKey,
-              value: r.value,
-              answeredAt: new Date(r.answeredAt),
-            }))
-          )
+        if (localId) {
+          const [existing] = await db.select({ id: surveys.id }).from(surveys).where(eq(surveys.clientId, localId))
+          if (existing) {
+            syncedLocalIds.push(localId)
+            continue
+          }
         }
+        await db.transaction(async (tx) => {
+          const [created] = await tx.insert(surveys).values({
+            clientId: localId,
+            settlementId: item.metadata.settlementId,
+            interviewerId: request.user.id,
+            lotNumber: item.metadata.lotNumber ?? null,
+            gpsLat: item.metadata.gpsLat ?? null,
+            gpsLng: item.metadata.gpsLng ?? null,
+            status: 'synced',
+            deviceInfo: item.metadata.deviceInfo ?? null,
+            createdAt: new Date(item.metadata.createdAt),
+            updatedAt: new Date(item.metadata.updatedAt),
+            completedAt: item.metadata.completedAt ? new Date(item.metadata.completedAt) : null,
+            syncedAt: new Date(),
+          }).returning({ id: surveys.id })
 
-        syncedIds.push(created.id)
+          if (item.responses.length > 0) {
+            await tx.insert(responses).values(
+              item.responses.map((r) => ({
+                surveyId: created.id,
+                questionKey: r.questionKey,
+                value: r.value,
+                textValue: r.textValue ?? null,
+                answeredAt: new Date(r.answeredAt),
+              }))
+            )
+          }
+
+          await tx.insert(syncLog).values({
+            surveyId: created.id,
+            deviceInfo: body.deviceInfo,
+            payloadHash,
+          })
+        })
+        if (localId) syncedLocalIds.push(localId)
       } catch (err) {
-        errors.push({ index: i, message: err instanceof Error ? err.message : 'Unknown error' })
+        if (localId && isClientIdConflict(err)) {
+          syncedLocalIds.push(localId)
+        } else {
+          errors.push({
+            localId: localId ?? `sem-localId-${i}`,
+            message: err instanceof Error ? err.message : 'Unknown error',
+          })
+        }
       }
     }
 
-    if (syncedIds.length > 0) {
-      await db.insert(syncLog).values({
-        surveyId: syncedIds[0],
-        deviceInfo: body.deviceInfo,
-        payloadHash,
-      })
-    }
-
-    return reply.status(201).send({ syncedIds, errors })
+    return reply.status(201).send({ syncedLocalIds, errors })
   })
 }

@@ -63,6 +63,7 @@ export const userSettlements = pgTable('user_settlements', {
 
 export const surveys = pgTable('surveys', {
   id: serial('id').primaryKey(),
+  clientId: text('client_id').unique(),
   settlementId: integer('settlement_id').notNull().references(() => settlements.id),
   interviewerId: integer('interviewer_id').notNull().references(() => users.id),
   lotNumber: text('lot_number'),
@@ -83,6 +84,7 @@ export const responses = pgTable('responses', {
   surveyId: integer('survey_id').notNull().references(() => surveys.id, { onDelete: 'cascade' }),
   questionKey: varchar('question_key', { length: 50 }).notNull(),
   value: jsonb('value').notNull(),
+  textValue: text('text_value'),
   answeredAt: timestamp('answered_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

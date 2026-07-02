@@ -35,19 +35,32 @@ export interface LocalResponse {
   surveyLocalId: string
   questionKey: string
   value: unknown
+  textValue?: string
   answeredAt: string
+}
+
+export interface LocalSettlement {
+  id: number
+  name: string
+  municipality: string
+  biome: string
 }
 
 const db = new Dexie('resa-survey') as Dexie & {
   questions: EntityTable<LocalQuestion, 'id'>
   surveys: EntityTable<LocalSurvey, 'id'>
   responses: EntityTable<LocalResponse, 'id'>
+  settlements: EntityTable<LocalSettlement, 'id'>
 }
 
 db.version(1).stores({
   questions: 'id, key, section, sortOrder',
   surveys: '++id, localId, status, settlementId',
   responses: '++id, surveyLocalId, questionKey, [surveyLocalId+questionKey]',
+})
+
+db.version(2).stores({
+  settlements: 'id',
 })
 
 export { db }

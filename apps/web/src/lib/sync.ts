@@ -1,10 +1,7 @@
-import { db, type LocalQuestion } from './db'
-import { apiFetch } from './api'
-
-interface Settlement {
-  id: number
-  name: string
-}
+import { db, type LocalQuestion, type LocalResponse, type LocalSettlement } from './db'
+import { apiFetch, ApiError } from './api'
+import { buildSyncPayload, resolveSyncOutcome } from './sync-helpers'
+import type { SyncResult } from '@resa/shared'
 
 export async function syncQuestions(): Promise<void> {
   try {
@@ -12,40 +9,8 @@ export async function syncQuestions(): Promise<void> {
     await db.questions.clear()
     await db.questions.bulkAdd(questions)
   } catch {
-    // Offline — use cached questions
+    // Offline — usa perguntas em cache
   }
-}
-
-/** Remove local surveys whose settlement was deleted on the server, and clean up old synced surveys */
-export async function cleanupStaleSurveys(): Promise<number> {
-  try {
-    const settlements = await apiFetch<Settlement[]>('/settlements')
-    const validIds = new Set(settlements.map((s) => s.id))
-
-    // Find orphaned surveys (settlement no longer exists)
-    const allSurveys = await db.surveys.toArray()
-    const orphaned = allSurveys.filter((s) => !validIds.has(s.settlementId))
-
-    // Also clean up synced surveys older than 7 days (already on server)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    const oldSynced = allSurveys.filter((s) => s.status === 'synced' && s.syncedAt && s.syncedAt < sevenDaysAgo)
-
-    const toDelete = [...orphaned, ...oldSynced]
-    for (const survey of toDelete) {
-      await db.responses.where('surveyLocalId').equals(survey.localId).delete()
-      await db.surveys.where('localId').equals(survey.localId).delete()
-    }
-
-    return toDelete.length
-  } catch {
-    return 0 // Offline — skip cleanup
-  }
-}
-
-/** Delete a local survey and its responses */
-export async function deleteLocalSurvey(localId: string): Promise<void> {
-  await db.responses.where('surveyLocalId').equals(localId).delete()
-  await db.surveys.where('localId').equals(localId).delete()
 }
 
 export async function getQuestions(): Promise<LocalQuestion[]> {
@@ -57,58 +22,101 @@ export async function getQuestions(): Promise<LocalQuestion[]> {
   return questions
 }
 
-export async function syncCompletedSurveys(): Promise<string[]> {
+interface ApiSettlement {
+  id: number
+  name: string
+  municipality: string
+  biome: string
+}
+
+export async function syncSettlements(): Promise<void> {
+  try {
+    const settlements = await apiFetch<ApiSettlement[]>('/settlements')
+    await db.settlements.clear()
+    await db.settlements.bulkAdd(
+      settlements.map(({ id, name, municipality, biome }) => ({ id, name, municipality, biome }))
+    )
+  } catch {
+    // Offline — usa assentamentos em cache
+  }
+}
+
+export async function getSettlements(): Promise<LocalSettlement[]> {
+  await syncSettlements()
+  return db.settlements.toArray()
+}
+
+/**
+ * Remove apenas questionários JÁ SINCRONIZADOS que ficaram órfãos
+ * (assentamento removido) ou antigos (> 7 dias). Questionários não
+ * sincronizados nunca são apagados automaticamente.
+ */
+export async function cleanupStaleSurveys(): Promise<number> {
+  const validIds = new Set((await db.settlements.toArray()).map((s) => s.id))
+  const allSurveys = await db.surveys.toArray()
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+  const toDelete = allSurveys.filter((s) =>
+    s.status === 'synced' && (
+      (validIds.size > 0 && !validIds.has(s.settlementId)) ||
+      (s.syncedAt !== null && s.syncedAt < sevenDaysAgo)
+    )
+  )
+
+  for (const survey of toDelete) {
+    await db.responses.where('surveyLocalId').equals(survey.localId).delete()
+    await db.surveys.where('localId').equals(survey.localId).delete()
+  }
+  return toDelete.length
+}
+
+export async function deleteLocalSurvey(localId: string): Promise<void> {
+  await db.responses.where('surveyLocalId').equals(localId).delete()
+  await db.surveys.where('localId').equals(localId).delete()
+}
+
+export type SyncStatus =
+  | { kind: 'nothing-pending' }
+  | { kind: 'auth-expired' }
+  | { kind: 'error' }
+  | { kind: 'done'; syncedCount: number; failedCount: number }
+
+let inFlight: Promise<SyncStatus> | null = null
+
+/** Single-flight: chamadas concorrentes compartilham a mesma requisição. */
+export function syncCompletedSurveys(): Promise<SyncStatus> {
+  if (!inFlight) {
+    inFlight = doSync().finally(() => { inFlight = null })
+  }
+  return inFlight
+}
+
+async function doSync(): Promise<SyncStatus> {
   const pending = await db.surveys.where('status').equals('completed').toArray()
-  if (pending.length === 0) return []
+  if (pending.length === 0) return { kind: 'nothing-pending' }
 
-  const token = localStorage.getItem('resa_token')
-  if (!token) return []
-
-  const syncedLocalIds: string[] = []
-
-  for (const survey of pending) {
-    try {
-      const surveyResponses = await db.responses
-        .where('surveyLocalId')
-        .equals(survey.localId)
-        .toArray()
-
-      await apiFetch('/sync', {
-        method: 'POST',
-        body: JSON.stringify({
-          surveys: [{
-            metadata: {
-              settlementId: survey.settlementId,
-              lotNumber: survey.lotNumber,
-              gpsLat: survey.gpsLat,
-              gpsLng: survey.gpsLng,
-              status: survey.status,
-              deviceInfo: survey.deviceInfo,
-              createdAt: survey.createdAt,
-              updatedAt: survey.updatedAt,
-              completedAt: survey.completedAt,
-            },
-            responses: surveyResponses.map((r) => ({
-              questionKey: r.questionKey,
-              value: r.value,
-              answeredAt: r.answeredAt,
-            })),
-          }],
-          deviceInfo: survey.deviceInfo,
-          syncedAt: new Date().toISOString(),
-        }),
-      })
-
-      await db.surveys.where('localId').equals(survey.localId).modify({
-        status: 'synced' as const,
-        syncedAt: new Date().toISOString(),
-      })
-
-      syncedLocalIds.push(survey.localId)
-    } catch {
-      // Will retry next sync cycle
-    }
+  const responsesByLocalId = new Map<string, LocalResponse[]>()
+  for (const s of pending) {
+    responsesByLocalId.set(s.localId, await db.responses.where('surveyLocalId').equals(s.localId).toArray())
   }
 
-  return syncedLocalIds
+  const payload = buildSyncPayload(pending, responsesByLocalId, navigator.userAgent, new Date().toISOString())
+
+  let result: SyncResult
+  try {
+    result = await apiFetch<SyncResult>('/sync', { method: 'POST', body: JSON.stringify(payload) })
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) return { kind: 'auth-expired' }
+    return { kind: 'error' }
+  }
+
+  const outcome = resolveSyncOutcome(pending.map((s) => s.localId), result)
+  const now = new Date().toISOString()
+  for (const localId of outcome.syncedLocalIds) {
+    await db.surveys.where('localId').equals(localId).modify({
+      status: 'synced' as const,
+      syncedAt: now,
+    })
+  }
+  return { kind: 'done', syncedCount: outcome.syncedLocalIds.length, failedCount: outcome.failedLocalIds.length }
 }

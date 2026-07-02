@@ -7,6 +7,7 @@ import { authRoutes } from './routes/auth.js'
 import { questionRoutes } from './routes/questions.js'
 import { settlementRoutes } from './routes/settlements.js'
 import { surveyRoutes } from './routes/surveys.js'
+import { exportRoutes } from './routes/export.js'
 
 const app = Fastify({ logger: true })
 
@@ -23,6 +24,7 @@ await app.register(authRoutes)
 await app.register(questionRoutes)
 await app.register(settlementRoutes)
 await app.register(surveyRoutes)
+await app.register(exportRoutes)
 
 const port = Number(process.env.PORT) || 3000
 const host = process.env.HOST || '0.0.0.0'

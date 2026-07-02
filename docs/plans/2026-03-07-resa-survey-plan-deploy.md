@@ -29,8 +29,8 @@ psql -U resa -d resa_survey -h localhost
 ## 2. Clonar e buildar
 
 ```bash
-cd /home/webmaster
-git clone git@github.com:ivanlppires/resa-survey.git
+mkdir -p /home/webmaster/apps/resa && cd /home/webmaster/apps/resa
+git clone https://github.com/ivanlppires/resa-survey.git
 cd resa-survey
 npm install
 npm run build
@@ -54,9 +54,11 @@ EOF
 
 ## 4. PM2 — iniciar o servidor
 
+O `dotenv` resolve o `.env` a partir do **cwd**, então o processo precisa rodar de dentro de `apps/server`:
+
 ```bash
-cd /home/webmaster/resa-survey
-pm2 start apps/server/dist/index.js --name resa-server --env production
+cd /home/webmaster/apps/resa/resa-survey/apps/server
+pm2 start dist/index.js --name resa-server
 pm2 save
 ```
 
@@ -133,13 +135,15 @@ Criar na raiz do projeto:
 #!/bin/bash
 set -e
 
-cd /home/webmaster/resa-survey
+cd /home/webmaster/apps/resa/resa-survey
 git pull origin master
 npm install
 npm run build
 pm2 restart resa-server
 echo "Deploy concluido!"
 ```
+
+> Migrações novas em `apps/server/drizzle/` não são aplicadas automaticamente — aplicar via `psql "$DATABASE_URL" -f apps/server/drizzle/NNNN_*.sql` antes do restart (fazer `pg_dump` antes).
 
 ```bash
 chmod +x deploy.sh

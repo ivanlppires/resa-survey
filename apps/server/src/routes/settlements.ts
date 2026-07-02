@@ -25,7 +25,7 @@ export async function settlementRoutes(app: FastifyInstance) {
     return db.select().from(settlements).where(inArray(settlements.id, ids))
   })
 
-  app.get<{ Params: { id: string } }>('/api/settlements/:id', async (request, reply) => {
+  app.get<{ Params: { id: string } }>('/api/settlements/:id', { preHandler: [app.authenticate] }, async (request, reply) => {
     const id = Number(request.params.id)
     const [settlement] = await db.select().from(settlements).where(eq(settlements.id, id))
     if (!settlement) {

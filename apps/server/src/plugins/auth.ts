@@ -3,8 +3,15 @@ import fjwt from '@fastify/jwt'
 import fp from 'fastify-plugin'
 
 async function auth(app: FastifyInstance) {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET é obrigatório em produção — defina em apps/server/.env')
+    }
+    app.log.warn('JWT_SECRET não definido — usando secret de desenvolvimento inseguro')
+  }
   await app.register(fjwt, {
-    secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
+    secret: secret || 'dev-secret-change-in-production',
   })
 
   app.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {

@@ -13,12 +13,13 @@ Run everything from this directory (the repo root). Requires Node >= 20 and Post
 ```bash
 npm run dev      # all workspaces in watch mode (web on :5173, server on :3000)
 npm run build    # production build of all workspaces (turbo, respects dependency order)
+npm run test     # vitest in @resa/server and @resa/web (pure logic: sync contract, CSV, progress)
 npm run clean    # remove dist/ everywhere
 ```
 
-`npm run lint` and `npm run test` exist at the root but no workspace implements them yet — there is no linter or test runner configured.
+To run a single workspace's tests: `npm run test -w @resa/server` (or `-w @resa/web`). `npm run lint` exists at the root but no workspace implements it — there is no linter configured.
 
-Server/database commands (need `apps/server/.env` with `DATABASE_URL`, see `.env.example`):
+Server/database commands (need `apps/server/.env` with `DATABASE_URL`; `JWT_SECRET` is **required in production** — the server refuses to boot without it when `NODE_ENV=production`; see `.env.example`):
 
 ```bash
 npm run db:seed -w @resa/server      # insert the 68 questions + initial users
@@ -39,12 +40,14 @@ npm workspaces + Turborepo monorepo with three packages:
 
 Questions are **data, not code**: they live in Postgres (seeded from `apps/server/src/db/seed.ts`, which is the source of truth for question content — `questionario.txt` at the root is the original text), are served by `GET /api/questions`, and cached in IndexedDB via Dexie (`apps/web/src/lib/db.ts`). Conditional questions use `conditional: { dependsOn, showWhen }` evaluated client-side.
 
-Surveys are created and answered entirely against IndexedDB, keyed by a client-generated `localId` (server IDs don't exist until sync). `apps/web/src/lib/sync.ts` handles the lifecycle: `syncCompletedSurveys()` posts each `completed` survey to `POST /api/sync`, then flips it to `synced` locally; failures are silently retried on the next cycle. `cleanupStaleSurveys()` deletes local surveys whose settlement was removed server-side and synced surveys older than 7 days. Survey status progresses `draft → in_progress → completed → synced`.
+Surveys are created and answered entirely against IndexedDB, keyed by a client-generated `localId` (UUID). Sync is **idempotent**: the `localId` is stored server-side as `surveys.client_id` (UNIQUE), so retries never duplicate. `syncCompletedSurveys()` posts all `completed` surveys in one batch to `POST /api/sync` and flips to `synced` **only** the `localId`s the server confirms in `syncedLocalIds` — never mark surveys synced without server confirmation. It is single-flight guarded and auto-triggered on app open and on the `online` event (see `SurveyListPage`). `cleanupStaleSurveys()` touches **only** `synced` surveys (orphaned or older than 7 days) — unsynced field data must never be auto-deleted. Survey status progresses `draft → in_progress → completed → synced`. "Outro (especifique)" free text lives in a separate `textValue` field (Dexie → payload → `responses.text_value`), never encoded into `value`.
 
 Auth state (JWT + user) is in `localStorage` (`resa_token`, `resa_user`). Roles are `admin | interviewer | viewer`; routing in `App.tsx` sends admins to `/admin` (dashboard) and interviewers to the survey list.
 
 ## Conventions and gotchas
 
-- Everything is ESM (`"type": "module"`). Server and shared use NodeNext resolution: relative imports in `.ts` files must use the `.js` extension.
+- Everything is ESM (`"type": "module"`). Server and shared use `.js` extensions on relative imports in `.ts` files.
+- The compiled server loads `dotenv/config`, which resolves `.env` from the **cwd** — run `node dist/index.js` from `apps/server/` (running from the repo root silently misses `apps/server/.env` and the health check reports `db: disconnected`).
+- Local dev Postgres lives in the `eleicoes_postgres` Docker container (port **5433**, not 5432) — role `resa`, database `resa_survey`.
 - Schema changes touch three places that must stay aligned: Drizzle schema (`apps/server/src/db/schema.ts`), shared types (`packages/shared/src`), and the Dexie schema/types (`apps/web/src/lib/db.ts` — bump the Dexie version when changing indexes).
 - Design and implementation plan documents live in `docs/plans/`, including the deploy runbook (`2026-03-07-resa-survey-plan-deploy.md` — PM2 + Nginx on a VPS).

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { db, type LocalQuestion } from '../lib/db'
+import { db, type LocalQuestion, type LocalSurvey } from '../lib/db'
 import { getQuestions } from '../lib/sync'
+import { computeProgress, isConditionMet, unansweredBySection } from '../lib/progress'
 
 const sectionLabels = {
   socioeconomic: 'Socioec.',
@@ -21,28 +23,47 @@ type Section = keyof typeof sectionLabels
 export default function SurveyPage() {
   const { localId } = useParams<{ localId: string }>()
   const navigate = useNavigate()
+  const [survey, setSurvey] = useState<LocalSurvey | null>(null)
   const [questions, setQuestions] = useState<LocalQuestion[]>([])
   const [responses, setResponses] = useState<Map<string, unknown>>(new Map())
+  const [textValues, setTextValues] = useState<Map<string, string>>(new Map())
   const [currentSection, setCurrentSection] = useState<Section>('socioeconomic')
   const [loading, setLoading] = useState(true)
+  const [showConfirmFinish, setShowConfirmFinish] = useState(false)
 
   const sections: Section[] = ['socioeconomic', 'behavioral', 'environmental']
+  const readOnly = survey?.status === 'synced'
 
   useEffect(() => {
     async function load() {
+      const s = await db.surveys.where('localId').equals(localId!).first()
+      setSurvey(s ?? null)
       const qs = await getQuestions()
       setQuestions(qs)
       const existing = await db.responses.where('surveyLocalId').equals(localId!).toArray()
-      const map = new Map<string, unknown>()
-      existing.forEach((r) => map.set(r.questionKey, r.value))
-      setResponses(map)
+      const values = new Map<string, unknown>()
+      const texts = new Map<string, string>()
+      existing.forEach((r) => {
+        values.set(r.questionKey, r.value)
+        if (r.textValue) texts.set(r.questionKey, r.textValue)
+      })
+      setResponses(values)
+      setTextValues(texts)
       setLoading(false)
     }
     load()
   }, [localId])
 
-  const saveResponse = useCallback(async (questionKey: string, value: unknown) => {
+  const saveResponse = useCallback(async (questionKey: string, value: unknown, textValue?: string) => {
+    if (readOnly) return
+
     setResponses((prev) => new Map(prev).set(questionKey, value))
+    setTextValues((prev) => {
+      const next = new Map(prev)
+      if (textValue !== undefined && textValue !== '') next.set(questionKey, textValue)
+      else next.delete(questionKey)
+      return next
+    })
 
     const existing = await db.responses
       .where('[surveyLocalId+questionKey]')
@@ -50,16 +71,35 @@ export default function SurveyPage() {
       .first()
 
     const now = new Date().toISOString()
+    const storedText = textValue !== undefined && textValue !== '' ? textValue : undefined
     if (existing) {
-      await db.responses.update(existing.id!, { value, answeredAt: now })
+      await db.responses.update(existing.id!, { value, textValue: storedText, answeredAt: now })
     } else {
-      await db.responses.add({ surveyLocalId: localId!, questionKey, value, answeredAt: now })
+      await db.responses.add({ surveyLocalId: localId!, questionKey, value, textValue: storedText, answeredAt: now })
     }
-
     await db.surveys.where('localId').equals(localId!).modify({ updatedAt: now })
-  }, [localId])
 
-  const handleComplete = async () => {
+    // Respostas de condicionais que ficaram ocultas são descartadas
+    const nextValues = new Map(responses).set(questionKey, value)
+    for (const child of questions) {
+      if (child.conditional?.dependsOn !== questionKey) continue
+      if (isConditionMet(child, nextValues)) continue
+      if (!nextValues.has(child.key)) continue
+      await db.responses.where('[surveyLocalId+questionKey]').equals([localId!, child.key]).delete()
+      setResponses((prev) => {
+        const next = new Map(prev)
+        next.delete(child.key)
+        return next
+      })
+      setTextValues((prev) => {
+        const next = new Map(prev)
+        next.delete(child.key)
+        return next
+      })
+    }
+  }, [localId, readOnly, responses, questions])
+
+  const completeSurvey = async () => {
     const now = new Date().toISOString()
     await db.surveys.where('localId').equals(localId!).modify({
       status: 'completed' as const,
@@ -69,18 +109,18 @@ export default function SurveyPage() {
     navigate('/')
   }
 
-  const sectionQuestions = questions.filter((q) => {
-    if (q.section !== currentSection) return false
-    if (q.conditional) {
-      const parentValue = responses.get(q.conditional.dependsOn)
-      if (!parentValue || !q.conditional.showWhen.includes(parentValue as string)) return false
-    }
-    return true
-  })
+  const sectionQuestions = questions.filter(
+    (q) => q.section === currentSection && isConditionMet(q, responses)
+  )
 
-  const totalQuestions = questions.filter((q) => !q.conditional).length
-  const answeredCount = responses.size
-  const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
+  const progress = computeProgress(questions, responses)
+  const unanswered = unansweredBySection(questions, responses)
+  const unansweredTotal = unanswered.socioeconomic + unanswered.behavioral + unanswered.environmental
+
+  const handleFinishClick = () => {
+    if (unansweredTotal > 0) setShowConfirmFinish(true)
+    else completeSurvey()
+  }
 
   if (loading) {
     return (
@@ -117,7 +157,11 @@ export default function SurveyPage() {
             </svg>
           </motion.button>
           <div className="text-center">
-            <span className="text-[13px] font-semibold text-apple-secondary">{Math.round(progress)}%</span>
+            {readOnly ? (
+              <span className="text-[13px] font-semibold text-apple-green">Sincronizado · somente leitura</span>
+            ) : (
+              <span className="text-[13px] font-semibold text-apple-secondary">{progress}%</span>
+            )}
           </div>
           <div className="w-9" /> {/* Spacer for centering */}
         </div>
@@ -170,17 +214,19 @@ export default function SurveyPage() {
                 <QuestionCard
                   question={q}
                   value={responses.get(q.key)}
-                  onChange={(val) => saveResponse(q.key, val)}
+                  textValue={textValues.get(q.key) ?? ''}
+                  readOnly={!!readOnly}
+                  onChange={(val, text) => saveResponse(q.key, val, text)}
                 />
               </motion.div>
             ))}
           </motion.div>
         </AnimatePresence>
 
-        {currentSection === 'environmental' && (
+        {currentSection === 'environmental' && !readOnly && (
           <div className="mt-6 safe-bottom pb-4">
             <motion.button
-              onClick={handleComplete}
+              onClick={handleFinishClick}
               whileTap={{ scale: 0.97 }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -192,37 +238,107 @@ export default function SurveyPage() {
           </div>
         )}
       </main>
+
+      {createPortal(
+        <AnimatePresence>
+          {showConfirmFinish && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowConfirmFinish(false)}
+            >
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 380 }}
+                className="w-full max-w-lg bg-apple-card rounded-t-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-5 pt-5 pb-3 text-center">
+                  <p className="text-[17px] font-bold text-apple-text">
+                    {unansweredTotal} pergunta{unansweredTotal > 1 ? 's' : ''} sem resposta
+                  </p>
+                  <p className="text-[14px] text-apple-secondary mt-1">
+                    {[
+                      unanswered.socioeconomic > 0 ? `${unanswered.socioeconomic} Socioeconômico` : null,
+                      unanswered.behavioral > 0 ? `${unanswered.behavioral} Comportamental` : null,
+                      unanswered.environmental > 0 ? `${unanswered.environmental} Ambiental` : null,
+                    ].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+                <div className="px-5 pb-5 space-y-2">
+                  <button
+                    onClick={completeSurvey}
+                    className="w-full h-12 rounded-xl bg-apple-green text-white text-[16px] font-semibold hover:bg-apple-green-hover transition-colors"
+                  >
+                    Finalizar mesmo assim
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmFinish(false)}
+                    className="w-full h-12 rounded-xl bg-apple-text/5 text-[16px] font-semibold text-apple-text hover:bg-apple-text/8 transition-colors"
+                    style={{ marginBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+                  >
+                    Continuar respondendo
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   )
 }
 
-function QuestionCard({ question, value, onChange }: {
+function QuestionCard({ question, value, textValue, readOnly, onChange }: {
   question: LocalQuestion
   value: unknown
-  onChange: (val: unknown) => void
+  textValue: string
+  readOnly: boolean
+  onChange: (val: unknown, textValue?: string) => void
 }) {
   return (
     <div className="bg-apple-card rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
       <p className="text-[12px] font-semibold text-apple-green tracking-wide uppercase mb-1">Pergunta {question.number}</p>
       <p className="text-[16px] font-semibold text-apple-text leading-snug mb-4">{question.text}</p>
 
-      {question.type === 'single_choice' && question.options && (
-        <SingleChoice options={question.options} value={value as string} onChange={onChange} />
+      {(question.type === 'single_choice' || question.type === 'yes_no') && question.options && (
+        <SingleChoice
+          options={question.options}
+          value={value as string}
+          textValue={textValue}
+          readOnly={readOnly}
+          onChange={onChange}
+        />
       )}
       {question.type === 'multiple_choice' && question.options && (
-        <MultipleChoice options={question.options} value={(value as string[]) ?? []} onChange={onChange} />
-      )}
-      {question.type === 'yes_no' && question.options && (
-        <SingleChoice options={question.options} value={value as string} onChange={onChange} />
+        <MultipleChoice
+          options={question.options}
+          value={(value as string[]) ?? []}
+          textValue={textValue}
+          readOnly={readOnly}
+          onChange={onChange}
+        />
       )}
       {question.type === 'scale' && (
-        <ScaleInput min={question.scaleMin ?? 1} max={question.scaleMax ?? 5} value={value as number} onChange={onChange} />
+        <ScaleInput
+          min={question.scaleMin ?? 1}
+          max={question.scaleMax ?? 5}
+          value={value as number}
+          readOnly={readOnly}
+          onChange={(v) => onChange(v)}
+        />
       )}
       {question.type === 'text' && (
         <textarea
           value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-xl bg-apple-bg px-4 py-3 text-[16px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 min-h-[80px] placeholder:text-apple-tertiary transition-shadow"
+          disabled={readOnly}
+          className="w-full rounded-xl bg-apple-bg px-4 py-3 text-[16px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 min-h-[80px] placeholder:text-apple-tertiary transition-shadow disabled:opacity-60"
           placeholder="Digite sua resposta..."
         />
       )}
@@ -230,13 +346,30 @@ function QuestionCard({ question, value, onChange }: {
   )
 }
 
-function SingleChoice({ options, value, onChange }: {
+function OptionTextInput({ value, readOnly, onCommit }: {
+  value: string
+  readOnly: boolean
+  onCommit: (text: string) => void
+}) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onCommit(e.target.value)}
+      disabled={readOnly}
+      className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-3 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow disabled:opacity-60"
+      placeholder="Especifique..."
+    />
+  )
+}
+
+function SingleChoice({ options, value, textValue, readOnly, onChange }: {
   options: { value: string; label: string; hasTextInput?: boolean }[]
   value: string
-  onChange: (val: string) => void
+  textValue: string
+  readOnly: boolean
+  onChange: (val: string, textValue?: string) => void
 }) {
-  const [textInputs, setTextInputs] = useState<Record<string, string>>({})
-
   return (
     <div className="space-y-2">
       {options.map((opt) => {
@@ -244,13 +377,14 @@ function SingleChoice({ options, value, onChange }: {
         return (
           <div key={opt.value}>
             <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onChange(opt.value)}
+              whileTap={readOnly ? undefined : { scale: 0.98 }}
+              onClick={() => { if (!readOnly) onChange(opt.value, opt.hasTextInput ? textValue : undefined) }}
+              disabled={readOnly}
               className={`w-full text-left px-4 py-3.5 rounded-xl transition-all text-[15px] font-medium ${
                 selected
                   ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
                   : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
-              }`}
+              } ${readOnly ? 'cursor-default' : ''}`}
             >
               <span className="flex items-center gap-3">
                 <span className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
@@ -268,15 +402,10 @@ function SingleChoice({ options, value, onChange }: {
               </span>
             </motion.button>
             {opt.hasTextInput && selected && (
-              <input
-                type="text"
-                value={textInputs[opt.value] ?? ''}
-                onChange={(e) => {
-                  setTextInputs((prev) => ({ ...prev, [opt.value]: e.target.value }))
-                  onChange(`${opt.value}:${e.target.value}`)
-                }}
-                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-3 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
-                placeholder="Especifique..."
+              <OptionTextInput
+                value={textValue}
+                readOnly={readOnly}
+                onCommit={(text) => onChange(opt.value, text)}
               />
             )}
           </div>
@@ -286,16 +415,19 @@ function SingleChoice({ options, value, onChange }: {
   )
 }
 
-function MultipleChoice({ options, value, onChange }: {
+function MultipleChoice({ options, value, textValue, readOnly, onChange }: {
   options: { value: string; label: string; hasTextInput?: boolean }[]
   value: string[]
-  onChange: (val: string[]) => void
+  textValue: string
+  readOnly: boolean
+  onChange: (val: string[], textValue?: string) => void
 }) {
-  const [textInputs, setTextInputs] = useState<Record<string, string>>({})
+  const textOption = options.find((o) => o.hasTextInput)
 
   const toggle = (optValue: string) => {
     const next = value.includes(optValue) ? value.filter((v) => v !== optValue) : [...value, optValue]
-    onChange(next)
+    const keepText = textOption && next.includes(textOption.value) ? textValue : undefined
+    onChange(next, keepText)
   }
 
   return (
@@ -305,13 +437,14 @@ function MultipleChoice({ options, value, onChange }: {
         return (
           <div key={opt.value}>
             <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => toggle(opt.value)}
+              whileTap={readOnly ? undefined : { scale: 0.98 }}
+              onClick={() => { if (!readOnly) toggle(opt.value) }}
+              disabled={readOnly}
               className={`w-full text-left px-4 py-3.5 rounded-xl transition-all text-[15px] font-medium ${
                 selected
                   ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
                   : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
-              }`}
+              } ${readOnly ? 'cursor-default' : ''}`}
             >
               <span className="flex items-center gap-3">
                 <span className={`w-[22px] h-[22px] rounded-[6px] border-2 flex items-center justify-center flex-shrink-0 transition-all ${
@@ -331,12 +464,10 @@ function MultipleChoice({ options, value, onChange }: {
               </span>
             </motion.button>
             {opt.hasTextInput && selected && (
-              <input
-                type="text"
-                value={textInputs[opt.value] ?? ''}
-                onChange={(e) => setTextInputs((prev) => ({ ...prev, [opt.value]: e.target.value }))}
-                className="mt-2 w-full rounded-xl bg-apple-bg px-4 py-3 text-[15px] text-apple-text outline-none focus:ring-2 focus:ring-apple-green/30 placeholder:text-apple-tertiary transition-shadow"
-                placeholder="Especifique..."
+              <OptionTextInput
+                value={textValue}
+                readOnly={readOnly}
+                onCommit={(text) => onChange(value, text)}
               />
             )}
           </div>
@@ -346,10 +477,11 @@ function MultipleChoice({ options, value, onChange }: {
   )
 }
 
-function ScaleInput({ min, max, value, onChange }: {
+function ScaleInput({ min, max, value, readOnly, onChange }: {
   min: number
   max: number
   value: number
+  readOnly: boolean
   onChange: (val: number) => void
 }) {
   const points = Array.from({ length: max - min + 1 }, (_, i) => min + i)
@@ -358,13 +490,14 @@ function ScaleInput({ min, max, value, onChange }: {
       {points.map((n) => (
         <motion.button
           key={n}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => onChange(n)}
+          whileTap={readOnly ? undefined : { scale: 0.9 }}
+          onClick={() => { if (!readOnly) onChange(n) }}
+          disabled={readOnly}
           className={`w-12 h-12 rounded-[14px] text-[16px] font-semibold transition-all ${
             value === n
               ? 'bg-apple-green text-white shadow-[0_2px_8px_rgba(34,163,82,0.3)]'
               : 'bg-apple-bg text-apple-text hover:bg-apple-text/6'
-          }`}
+          } ${readOnly ? 'cursor-default' : ''}`}
         >
           {n}
         </motion.button>

@@ -15,6 +15,13 @@
       "when": 1773077474515,
       "tag": "0001_goofy_iron_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782964591814,
+      "tag": "0002_known_plazm",
+      "breakpoints": true
     }
   ]
 }

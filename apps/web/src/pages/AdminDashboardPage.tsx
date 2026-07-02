@@ -45,6 +45,14 @@ interface Question {
   active: boolean
 }
 
+interface SurveyDetail extends SurveyOverview {
+  gpsLat: number | null
+  gpsLng: number | null
+  syncedAt: string | null
+  deviceInfo: string | null
+  responses: { questionKey: string; value: unknown; textValue: string | null; answeredAt: string }[]
+}
+
 type Tab = 'overview' | 'questions' | 'settlements' | 'users'
 
 const roleLabels: Record<string, string> = {
@@ -296,19 +304,57 @@ function OverviewTab() {
   const [surveys, setSurveys] = useState<SurveyOverview[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [users, setUsers] = useState<UserInfo[]>([])
+  const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const [detail, setDetail] = useState<SurveyDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
 
   useEffect(() => {
     Promise.all([
       apiFetch<SurveyOverview[]>('/surveys'),
       apiFetch<Settlement[]>('/settlements'),
       apiFetch<UserInfo[]>('/admin/users'),
-    ]).then(([s, st, u]) => {
+      apiFetch<Question[]>('/admin/questions'),
+    ]).then(([s, st, u, q]) => {
       setSurveys(s)
       setSettlements(st)
       setUsers(u)
+      setQuestions(q)
     }).finally(() => setLoading(false))
   }, [])
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const token = localStorage.getItem('resa_token')
+      const res = await fetch('/api/admin/export.csv', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+      if (!res.ok) throw new Error('Falha ao exportar')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `resa-survey-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Falha ao exportar CSV')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const openDetail = async (id: number) => {
+    setDetailLoading(true)
+    try {
+      const d = await apiFetch<SurveyDetail>(`/surveys/${id}`)
+      setDetail(d)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
 
   if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
 
@@ -336,6 +382,22 @@ function OverviewTab() {
         ))}
       </div>
 
+      {surveys.length > 0 && (
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={handleExport}
+          disabled={exporting}
+          className="flex items-center justify-center gap-2 w-full bg-apple-card text-apple-green rounded-2xl py-3.5 text-[15px] font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] hover:bg-apple-green/5 transition-colors disabled:opacity-40"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          {exporting ? 'Exportando...' : 'Exportar CSV'}
+        </motion.button>
+      )}
+
       {surveys.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-14 h-14 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-4">
@@ -352,12 +414,14 @@ function OverviewTab() {
           {surveys.slice(0, 10).map((s, i) => {
             const settlement = settlements.find(st => st.id === s.settlementId)
             return (
-              <motion.div
+              <motion.button
                 key={s.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]"
+                onClick={() => openDetail(s.id)}
+                disabled={detailLoading}
+                className="w-full text-left bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
               >
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
@@ -367,18 +431,122 @@ function OverviewTab() {
                       {new Date(s.createdAt).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
-                  <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full ${
-                    s.status === 'synced' ? 'bg-apple-green/12 text-apple-green' : 'bg-apple-blue/12 text-apple-blue'
-                  }`}>
-                    {s.status === 'synced' ? 'Sincronizado' : s.status}
-                  </span>
+                  <div className="flex items-center gap-2 ml-3">
+                    <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap ${
+                      s.status === 'synced' ? 'bg-apple-green/12 text-apple-green' : 'bg-apple-blue/12 text-apple-blue'
+                    }`}>
+                      {s.status === 'synced' ? 'Sincronizado' : s.status}
+                    </span>
+                    <svg width="7" height="12" viewBox="0 0 7 12" fill="none" className="text-apple-tertiary flex-shrink-0">
+                      <path d="M1 1l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                 </div>
-              </motion.div>
+              </motion.button>
             )
           })}
         </div>
       )}
+
+      <SurveyDetailSheet
+        detail={detail}
+        settlements={settlements}
+        users={users}
+        questions={questions}
+        onClose={() => setDetail(null)}
+      />
     </div>
+  )
+}
+
+function formatResponseValue(question: Question | undefined, value: unknown): string {
+  if (value == null) return '—'
+  const labelFor = (v: string) => question?.options?.find((o) => o.value === v)?.label ?? v
+  if (Array.isArray(value)) return value.map((v) => labelFor(String(v))).join(', ')
+  if (typeof value === 'string') return labelFor(value)
+  return String(value)
+}
+
+function SurveyDetailSheet({ detail, settlements, users, questions, onClose }: {
+  detail: SurveyDetail | null
+  settlements: Settlement[]
+  users: UserInfo[]
+  questions: Question[]
+  onClose: () => void
+}) {
+  const settlement = detail ? settlements.find((s) => s.id === detail.settlementId) : undefined
+  const interviewer = detail ? users.find((u) => u.id === detail.interviewerId) : undefined
+  const byKey = new Map(questions.map((q) => [q.key, q]))
+  const sortedResponses = detail
+    ? [...detail.responses].sort((a, b) => (byKey.get(a.questionKey)?.sortOrder ?? 999) - (byKey.get(b.questionKey)?.sortOrder ?? 999))
+    : []
+
+  return createPortal(
+    <AnimatePresence>
+      {detail && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+            className="absolute bottom-0 left-0 right-0 sm:relative sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-apple-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-[0_-4px_40px_rgba(0,0,0,0.15)] max-h-[88dvh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full bg-apple-text/10 mx-auto mt-2.5 mb-1 sm:hidden" />
+
+            <div className="px-5 pt-3 pb-3 border-b border-apple-separator">
+              <h3 className="text-[17px] font-bold text-apple-text">{settlement?.name ?? `Assentamento #${detail.settlementId}`}</h3>
+              <p className="text-[13px] text-apple-secondary mt-0.5">
+                {detail.lotNumber ? `Lote ${detail.lotNumber} · ` : ''}
+                {interviewer?.name ?? `Entrevistador #${detail.interviewerId}`} · {new Date(detail.createdAt).toLocaleString('pt-BR')}
+              </p>
+              {detail.gpsLat != null && detail.gpsLng != null && (
+                <p className="text-[12px] text-apple-tertiary mt-0.5">GPS: {detail.gpsLat.toFixed(5)}, {detail.gpsLng.toFixed(5)}</p>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              {sortedResponses.length === 0 ? (
+                <p className="text-[14px] text-apple-tertiary text-center py-6">Sem respostas registradas.</p>
+              ) : (
+                sortedResponses.map((r) => {
+                  const q = byKey.get(r.questionKey)
+                  return (
+                    <div key={r.questionKey} className="pb-3 border-b border-apple-separator last:border-b-0">
+                      <p className="text-[12px] font-semibold text-apple-green uppercase tracking-wide">
+                        {q ? `Pergunta ${q.number}` : r.questionKey}
+                      </p>
+                      <p className="text-[14px] text-apple-text mt-0.5">{q?.text ?? r.questionKey}</p>
+                      <p className="text-[14px] font-semibold text-apple-text mt-1">
+                        {formatResponseValue(q, r.value)}
+                        {r.textValue ? <span className="font-normal text-apple-secondary"> — {r.textValue}</span> : null}
+                      </p>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            <div className="px-5 pt-2 pb-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+              <button
+                onClick={onClose}
+                className="w-full h-12 rounded-xl bg-apple-text/5 text-[16px] font-semibold text-apple-text hover:bg-apple-text/8 transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
   )
 }
 

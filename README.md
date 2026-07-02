@@ -69,6 +69,7 @@ O frontend roda em `http://localhost:5173` e o servidor em `http://localhost:300
 |---------|-----------|
 | `npm run dev` | Inicia todos os pacotes em modo desenvolvimento |
 | `npm run build` | Build de producao de todos os pacotes |
+| `npm run test` | Testes (Vitest) do server e do web |
 | `npm run clean` | Remove dist/ de todos os pacotes |
 
 ## Deploy

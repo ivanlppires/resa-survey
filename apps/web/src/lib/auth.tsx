@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { login as apiLogin, logout as apiLogout, getStoredUser } from './api'
+import { login as apiLogin, logout as apiLogout, getStoredUser, apiFetch, ApiError } from './api'
 
 interface User {
   id: number
@@ -22,8 +22,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setUser(getStoredUser())
+    const stored = getStoredUser()
+    setUser(stored)
     setLoading(false)
+    if (stored && navigator.onLine) {
+      apiFetch('/auth/me').catch((err) => {
+        if (err instanceof ApiError && err.status === 401) {
+          apiLogout()
+          setUser(null)
+        }
+        // Erro de rede: mantém a sessão local (offline-first)
+      })
+    }
   }, [])
 
   const login = async (email: string, password: string) => {

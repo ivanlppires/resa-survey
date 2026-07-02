@@ -1,5 +1,14 @@
 const API_BASE = '/api'
 
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('resa_token')
   const headers: Record<string, string> = {}
@@ -16,7 +25,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || `API error ${res.status}`)
+    throw new ApiError(body.error || `API error ${res.status}`, res.status)
   }
   const text = await res.text()
   return text ? JSON.parse(text) : ({} as T)

@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { db } from '../db/index.js'
 import { settlements, userSettlements } from '../db/schema.js'
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 const settlementSchema = z.object({
   name: z.string().min(1),
@@ -25,8 +25,15 @@ export async function settlementRoutes(app: FastifyInstance) {
     return db.select().from(settlements).where(inArray(settlements.id, ids))
   })
 
-  app.get<{ Params: { id: string } }>('/api/settlements/:id', async (request, reply) => {
+  app.get<{ Params: { id: string } }>('/api/settlements/:id', { preHandler: [app.authenticate] }, async (request, reply) => {
     const id = Number(request.params.id)
+    if (request.user.role !== 'admin') {
+      const [assigned] = await db.select({ id: userSettlements.id }).from(userSettlements)
+        .where(and(eq(userSettlements.userId, request.user.id), eq(userSettlements.settlementId, id)))
+      if (!assigned) {
+        return reply.status(403).send({ error: 'Forbidden' })
+      }
+    }
     const [settlement] = await db.select().from(settlements).where(eq(settlements.id, id))
     if (!settlement) {
       return reply.status(404).send({ error: 'Settlement not found' })

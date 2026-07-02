@@ -1,25 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
-import { db } from '../lib/db'
-import { apiFetch } from '../lib/api'
-
-interface Settlement {
-  id: number
-  name: string
-  municipality: string
-  biome: string
-}
+import { db, type LocalSettlement } from '../lib/db'
+import { getSettlements } from '../lib/sync'
 
 export default function NewSurveyPage() {
   const navigate = useNavigate()
-  const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [settlements, setSettlements] = useState<LocalSettlement[]>([])
   const [settlementId, setSettlementId] = useState<number | ''>('')
   const [lotNumber, setLotNumber] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    apiFetch<Settlement[]>('/settlements').then(setSettlements).catch(() => {})
+    getSettlements().then(setSettlements).catch(() => {})
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,7 +96,7 @@ export default function NewSurveyPage() {
                   ))}
                 </select>
               ) : (
-                <p className="text-[15px] text-apple-tertiary py-1">Nenhum assentamento cadastrado. Peça ao admin para cadastrar.</p>
+                <p className="text-[15px] text-apple-tertiary py-1">Nenhum assentamento disponível. Conecte-se à internet uma vez para baixar a lista.</p>
               )}
             </div>
             <div className="h-px bg-apple-separator mx-4" />

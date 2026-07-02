@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../lib/auth'
 import { db, type LocalSurvey } from '../lib/db'
-import { syncCompletedSurveys, syncQuestions, cleanupStaleSurveys, deleteLocalSurvey } from '../lib/sync'
+import { syncCompletedSurveys, syncQuestions, syncSettlements, cleanupStaleSurveys, deleteLocalSurvey } from '../lib/sync'
 import ChangePasswordModal from '../components/ChangePasswordModal'
 import ToastContainer, { type ToastData } from '../components/Toast'
 
@@ -31,18 +31,14 @@ export default function SurveyListPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [toasts, setToasts] = useState<ToastData[]>([])
 
+  const toastSeq = useRef(0)
   const addToast = useCallback((type: ToastData['type'], message: string) => {
-    setToasts((prev) => [...prev, { id: Date.now(), type, message }])
+    const id = ++toastSeq.current
+    setToasts((prev) => [...prev, { id, type, message }])
   }, [])
 
   const dismissToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
-  }, [])
-
-  useEffect(() => {
-    loadSurveys()
-    syncQuestions()
-    cleanupStaleSurveys().then(() => loadSurveys())
   }, [])
 
   async function loadSurveys() {
@@ -50,30 +46,44 @@ export default function SurveyListPage() {
     setSurveys(all)
   }
 
-  async function handleSync() {
+  const runSync = useCallback(async (auto: boolean) => {
     setSyncing(true)
     try {
-      const pending = await db.surveys.where('status').equals('completed').count()
-      if (pending === 0) {
-        addToast('info', 'Nenhum questionário pendente')
+      const status = await syncCompletedSurveys()
+      if (status.kind === 'nothing-pending') {
+        if (!auto) addToast('info', 'Nenhum questionário pendente')
         return
       }
-      const syncedIds = await syncCompletedSurveys()
+      if (status.kind === 'auth-expired') {
+        addToast('error', 'Sessão expirada — entre novamente para sincronizar')
+        return
+      }
+      if (status.kind === 'error') {
+        if (!auto) addToast('error', 'Falha ao sincronizar. Tente novamente.')
+        return
+      }
       await cleanupStaleSurveys()
       await loadSurveys()
-      const failed = pending - syncedIds.length
-      if (syncedIds.length > 0) {
-        addToast('success', `${syncedIds.length} questionário${syncedIds.length > 1 ? 's' : ''} sincronizado${syncedIds.length > 1 ? 's' : ''}`)
+      if (status.syncedCount > 0) {
+        addToast('success', `${status.syncedCount} questionário${status.syncedCount > 1 ? 's' : ''} sincronizado${status.syncedCount > 1 ? 's' : ''}`)
       }
-      if (failed > 0) {
-        addToast('error', `${failed} questionário${failed > 1 ? 's' : ''} falhou ao sincronizar`)
+      if (status.failedCount > 0) {
+        addToast('error', `${status.failedCount} questionário${status.failedCount > 1 ? 's' : ''} falhou ao sincronizar`)
       }
-    } catch {
-      addToast('error', 'Falha ao sincronizar. Tente novamente.')
     } finally {
       setSyncing(false)
     }
-  }
+  }, [addToast])
+
+  useEffect(() => {
+    loadSurveys()
+    syncQuestions()
+    syncSettlements().then(() => cleanupStaleSurveys()).then(() => loadSurveys())
+    if (navigator.onLine) runSync(true)
+    const onOnline = () => runSync(true)
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [runSync])
 
   async function handleDelete(localId: string) {
     await deleteLocalSurvey(localId)
@@ -94,7 +104,7 @@ export default function SurveyListPage() {
           <div className="flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={handleSync}
+              onClick={() => runSync(false)}
               disabled={syncing}
               className="text-[14px] font-semibold h-9 px-4 rounded-full bg-apple-text/5 text-apple-text hover:bg-apple-text/8 transition-colors disabled:opacity-40"
             >
@@ -172,7 +182,7 @@ export default function SurveyListPage() {
                 className="flex items-center gap-2"
               >
                 <Link
-                  to={s.status === 'synced' ? '#' : `/survey/${s.localId}`}
+                  to={`/survey/${s.localId}`}
                   className="flex-1 flex items-center justify-between bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform min-w-0"
                 >
                   <div className="min-w-0 flex-1">
@@ -185,11 +195,9 @@ export default function SurveyListPage() {
                     <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap ${statusStyles[s.status]}`}>
                       {statusLabels[s.status]}
                     </span>
-                    {s.status !== 'synced' && (
-                      <svg width="7" height="12" viewBox="0 0 7 12" fill="none" className="text-apple-tertiary flex-shrink-0">
-                        <path d="M1 1l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
+                    <svg width="7" height="12" viewBox="0 0 7 12" fill="none" className="text-apple-tertiary flex-shrink-0">
+                      <path d="M1 1l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </div>
                 </Link>
                 <motion.button

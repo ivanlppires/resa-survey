@@ -1,4 +1,29 @@
-import type { SurveyMetadata, SurveyResponse } from './survey-schema.js'
+import type { SurveyStatus } from './survey-schema.js'
+
+export interface SyncSurveyMetadata {
+  localId: string
+  settlementId: number
+  lotNumber: string | null
+  gpsLat: number | null
+  gpsLng: number | null
+  status: SurveyStatus
+  deviceInfo: string | null
+  createdAt: string
+  updatedAt: string
+  completedAt: string | null
+}
+
+export interface SyncResponseItem {
+  questionKey: string
+  value: unknown
+  textValue: string | null
+  answeredAt: string
+}
+
+export interface SyncSurvey {
+  metadata: SyncSurveyMetadata
+  responses: SyncResponseItem[]
+}
 
 export interface SyncPayload {
   surveys: SyncSurvey[]
@@ -6,17 +31,13 @@ export interface SyncPayload {
   syncedAt: string
 }
 
-export interface SyncSurvey {
-  metadata: SurveyMetadata
-  responses: SurveyResponse[]
+export interface SyncErrorItem {
+  localId: string
+  message: string
 }
 
 export interface SyncResult {
-  syncedIds: string[]
-  errors: SyncError[]
-}
-
-export interface SyncError {
-  surveyId: string
-  message: string
+  syncedLocalIds: string[]
+  errors: SyncErrorItem[]
+  message?: string
 }

@@ -973,6 +973,17 @@ const questionData: (typeof questions.$inferInsert)[] = [
 ]
 
 async function seed() {
+  // No boot do container o seed roda a cada start; só pode popular banco vazio
+  // para nunca sobrescrever questões editadas via admin.
+  if (process.env.SEED_ONLY_IF_EMPTY === '1') {
+    const existing = await db.select({ id: questions.id }).from(questions).limit(1)
+    if (existing.length > 0) {
+      console.log('Questions already present, skipping seed (SEED_ONLY_IF_EMPTY=1).')
+      await client.end()
+      process.exit(0)
+    }
+  }
+
   console.log('Seeding questions...')
 
   // Clear existing questions

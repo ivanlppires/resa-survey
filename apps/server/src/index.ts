@@ -1,5 +1,7 @@
 import 'dotenv/config'
+import path from 'node:path'
 import Fastify from 'fastify'
+import fastifyStatic from '@fastify/static'
 import { ZodError } from 'zod'
 import { authPlugin } from './plugins/auth.js'
 import { healthRoutes } from './routes/health.js'
@@ -25,6 +27,19 @@ await app.register(questionRoutes)
 await app.register(settlementRoutes)
 await app.register(surveyRoutes)
 await app.register(exportRoutes)
+
+// Em produção containerizada o próprio servidor serve o build do PWA
+// (STATIC_DIR aponta para apps/web/dist); em dev/Nginx isso fica desligado.
+const staticDir = process.env.STATIC_DIR
+if (staticDir) {
+  await app.register(fastifyStatic, { root: path.resolve(staticDir) })
+  app.setNotFoundHandler((request, reply) => {
+    if (request.raw.url?.startsWith('/api/')) {
+      return reply.status(404).send({ error: 'Not found' })
+    }
+    return reply.sendFile('index.html')
+  })
+}
 
 const port = Number(process.env.PORT) || 3000
 const host = process.env.HOST || '0.0.0.0'

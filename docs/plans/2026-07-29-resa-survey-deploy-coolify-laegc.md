@@ -72,9 +72,25 @@ curl -X PATCH -H "Authorization: Bearer <TOKEN_COOLIFY>" -H "Content-Type: appli
 
 O formato aceito é um **array de `{name, domain}`** — passar o JSON aninhado como string
 retorna erro de validação. Depois é obrigatório **redeploy**: as labels do Traefik só são
-regravadas quando os containers são recriados. O certificado Let's Encrypt é emitido
-automaticamente pelo Traefik (`certresolver=letsencrypt`) assim que o DNS do domínio
-apontar para `179.197.236.155`.
+regravadas quando os containers são recriados.
+
+O certificado Let's Encrypt é emitido pelo Traefik (`certresolver=letsencrypt`, desafio
+HTTP-01) assim que o DNS do domínio apontar para `179.197.236.155`.
+
+> **Ordem importa.** Se o router subir antes do registro DNS existir, o Let's Encrypt
+> responde `NXDOMAIN`, o Traefik marca a falha e entra em backoff longo — não tenta de
+> novo em tempo útil, e o domínio segue servindo `TRAEFIK DEFAULT CERT`. Depois de
+> publicar o DNS, force a nova tentativa:
+>
+> ```bash
+> ssh root@179.197.236.155 'docker restart coolify-proxy'
+> ```
+>
+> O cert sai em segundos. Conferir:
+> `echo | openssl s_client -connect <dominio>:443 -servername <dominio> 2>/dev/null | openssl x509 -noout -subject -issuer -dates`
+>
+> O DNS de `laegc.com.br` é gerenciado no painel do **registro.br** (DNS automático,
+> `a.auto.dns.br` / `b.auto.dns.br`).
 
 ## Banco de dados
 

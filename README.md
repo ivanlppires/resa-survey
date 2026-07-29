@@ -74,12 +74,18 @@ O frontend roda em `http://localhost:5173` e o servidor em `http://localhost:300
 
 ## Deploy
 
-Deploy via PM2 + Nginx na VPS. Veja `docs/plans/2026-03-07-resa-survey-plan-deploy.md` para detalhes.
+Producao: **https://resa-survey.laegc.com.br**, no servidor do LAEGC via Coolify (Docker +
+Traefik), a partir do `docker-compose.yml` da raiz (app Fastify servindo o PWA + Postgres 16).
+Veja `docs/plans/2026-07-29-resa-survey-deploy-coolify-laegc.md` para detalhes.
 
 ```bash
-# Na VPS
-./deploy.sh
+# Deploy: push no master e dispare o endpoint do Coolify
+git push origin master
+curl -X POST -H "Authorization: Bearer <TOKEN_COOLIFY>" \
+  "http://179.197.236.155:8000/api/v1/deploy?uuid=bs8x9x7vbjwvqpwnxwhvyiu1"
 ```
+
+As migracoes Drizzle e o seed condicional rodam no boot do container (`docker-entrypoint.sh`).
 
 ## Licenca
 

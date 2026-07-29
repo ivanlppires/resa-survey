@@ -1,4 +1,10 @@
-# RESA Survey - Deploy Plan (VPS Contabo)
+# RESA Survey - Deploy Plan (VPS Contabo) — OBSOLETO
+
+> **Este runbook não vale mais.** Em 2026-07-29 a produção migrou para o servidor do
+> LAEGC (179.197.236.155) com Coolify + Docker. A aplicação, o banco e a role `resa`
+> foram removidos do VPS Contabo. O runbook vigente é
+> [`2026-07-29-resa-survey-deploy-coolify-laegc.md`](./2026-07-29-resa-survey-deploy-coolify-laegc.md).
+> O conteúdo abaixo fica só como registro histórico.
 
 **VPS:** 209.126.77.36 (ivanpires.dev), Ubuntu 22.04, user `webmaster`
 **Stack:** PM2 + Nginx + PostgreSQL 14 (ja instalados)

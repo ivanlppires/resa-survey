@@ -14,6 +14,7 @@ export default defineConfig({
       manifest: {
         name: 'RESA Survey',
         short_name: 'RESA',
+        lang: 'pt-BR',
         description: 'Pesquisa Socioeconômica e Ambiental — Rede de Pesquisa para uma Economia Sustentável da Amazônia',
         theme_color: '#F6F5F2',
         background_color: '#F6F5F2',

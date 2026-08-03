@@ -47,8 +47,15 @@ export async function surveyRoutes(app: FastifyInstance) {
 
   app.delete<{ Params: { id: string } }>('/api/admin/surveys/:id', { preHandler: [app.requireAdmin] }, async (request, reply) => {
     const id = Number(request.params.id)
-    await db.delete(responses).where(eq(responses.surveyId, id))
-    const [deleted] = await db.delete(surveys).where(eq(surveys.id, id)).returning()
+    // sync_log referencia surveys.id sem ON DELETE CASCADE, então precisa ser
+    // removido explicitamente; responses tem cascade, mas removemos junto na
+    // transação por clareza e atomicidade.
+    const deleted = await db.transaction(async (tx) => {
+      await tx.delete(syncLog).where(eq(syncLog.surveyId, id))
+      await tx.delete(responses).where(eq(responses.surveyId, id))
+      const [row] = await tx.delete(surveys).where(eq(surveys.id, id)).returning()
+      return row
+    })
     if (!deleted) {
       return reply.status(404).send({ error: 'Survey not found' })
     }

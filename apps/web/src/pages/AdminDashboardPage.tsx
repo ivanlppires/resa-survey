@@ -287,13 +287,27 @@ function DestructiveSheet({ open, title, message, onConfirm, onCancel }: {
   )
 }
 
+/** Baixa um arquivo autenticado (export CSV/XLSX) disparando o download no navegador. */
+async function downloadFile(path: string, filename: string): Promise<void> {
+  const token = localStorage.getItem('resa_token')
+  const res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
+  if (!res.ok) throw new Error('Falha ao baixar')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function OverviewTab() {
   const [surveys, setSurveys] = useState<SurveyOverview[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [users, setUsers] = useState<UserInfo[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
-  const [exporting, setExporting] = useState(false)
+  const [exporting, setExporting] = useState<'csv' | 'xlsx' | null>(null)
   const [detail, setDetail] = useState<SurveyDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
 
@@ -311,25 +325,19 @@ function OverviewTab() {
     }).finally(() => setLoading(false))
   }, [])
 
-  const handleExport = async () => {
-    setExporting(true)
+  const reloadSurveys = () => {
+    apiFetch<SurveyOverview[]>('/surveys').then(setSurveys)
+  }
+
+  const exportAll = async (format: 'csv' | 'xlsx') => {
+    setExporting(format)
     try {
-      const token = localStorage.getItem('resa_token')
-      const res = await fetch('/api/admin/export.csv', {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      })
-      if (!res.ok) throw new Error('Falha ao exportar')
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `resa-survey-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      const date = new Date().toISOString().slice(0, 10)
+      await downloadFile(`/api/admin/export.${format}`, `resa-survey-${date}.${format}`)
     } catch {
-      alert('Falha ao exportar CSV')
+      alert(`Falha ao exportar ${format.toUpperCase()}`)
     } finally {
-      setExporting(false)
+      setExporting(null)
     }
   }
 
@@ -370,19 +378,24 @@ function OverviewTab() {
       </div>
 
       {surveys.length > 0 && (
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={handleExport}
-          disabled={exporting}
-          className="flex items-center justify-center gap-2 w-full bg-apple-card text-apple-green rounded-2xl py-3.5 text-[15px] font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] hover:bg-apple-green/5 transition-colors disabled:opacity-40"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          {exporting ? 'Exportando...' : 'Exportar CSV'}
-        </motion.button>
+        <div className="grid grid-cols-2 gap-2">
+          {(['csv', 'xlsx'] as const).map((format) => (
+            <motion.button
+              key={format}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => exportAll(format)}
+              disabled={exporting !== null}
+              className="flex items-center justify-center gap-2 bg-apple-card text-apple-green rounded-2xl py-3.5 text-[15px] font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] hover:bg-apple-green/5 transition-colors disabled:opacity-40"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {exporting === format ? 'Exportando...' : format === 'csv' ? 'Exportar CSV' : 'Exportar Excel'}
+            </motion.button>
+          ))}
+        </div>
       )}
 
       {surveys.length === 0 ? (
@@ -441,6 +454,7 @@ function OverviewTab() {
         users={users}
         questions={questions}
         onClose={() => setDetail(null)}
+        onDeleted={() => { setDetail(null); reloadSurveys() }}
       />
     </div>
   )
@@ -454,13 +468,18 @@ function formatResponseValue(question: Question | undefined, value: unknown): st
   return String(value)
 }
 
-function SurveyDetailSheet({ detail, settlements, users, questions, onClose }: {
+function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onDeleted }: {
   detail: SurveyDetail | null
   settlements: Settlement[]
   users: UserInfo[]
   questions: Question[]
   onClose: () => void
+  onDeleted: () => void
 }) {
+  const [busy, setBusy] = useState<'csv' | 'xlsx' | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   const settlement = detail ? settlements.find((s) => s.id === detail.settlementId) : undefined
   const interviewer = detail ? users.find((u) => u.id === detail.interviewerId) : undefined
   const byKey = new Map(questions.map((q) => [q.key, q]))
@@ -468,7 +487,36 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose }: {
     ? [...detail.responses].sort((a, b) => (byKey.get(a.questionKey)?.sortOrder ?? 999) - (byKey.get(b.questionKey)?.sortOrder ?? 999))
     : []
 
-  return createPortal(
+  const downloadOne = async (format: 'csv' | 'xlsx') => {
+    if (!detail) return
+    setBusy(format)
+    try {
+      const date = new Date().toISOString().slice(0, 10)
+      await downloadFile(`/api/admin/export.${format}?surveyId=${detail.id}`, `resa-entrevista-${detail.id}-${date}.${format}`)
+    } catch {
+      alert(`Falha ao baixar ${format.toUpperCase()}`)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!detail) return
+    setDeleting(true)
+    try {
+      await apiFetch(`/admin/surveys/${detail.id}`, { method: 'DELETE' })
+      setConfirmDelete(false)
+      onDeleted()
+    } catch {
+      alert('Falha ao excluir a entrevista')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      {createPortal(
     <AnimatePresence>
       {detail && (
         <motion.div
@@ -521,10 +569,33 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose }: {
               )}
             </div>
 
-            <div className="px-5 pt-2 pb-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+            <div className="px-5 pt-2 pb-4 space-y-2 border-t border-apple-separator" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+              <div className="grid grid-cols-2 gap-2">
+                {(['csv', 'xlsx'] as const).map((format) => (
+                  <button
+                    key={format}
+                    onClick={() => downloadOne(format)}
+                    disabled={busy !== null}
+                    className="flex items-center justify-center gap-1.5 h-11 rounded-xl bg-apple-green/10 text-apple-green text-[15px] font-semibold hover:bg-apple-green/15 transition-colors disabled:opacity-40"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {busy === format ? 'Baixando...' : format === 'csv' ? 'Baixar CSV' : 'Baixar Excel'}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full h-11 rounded-xl bg-apple-red/10 text-apple-red text-[15px] font-semibold hover:bg-apple-red/15 transition-colors"
+              >
+                Excluir entrevista
+              </button>
               <button
                 onClick={onClose}
-                className="w-full h-12 rounded-xl bg-apple-text/5 text-[16px] font-semibold text-apple-text hover:bg-apple-text/8 transition-colors"
+                className="w-full h-11 rounded-xl bg-apple-text/5 text-[15px] font-semibold text-apple-text hover:bg-apple-text/8 transition-colors"
               >
                 Fechar
               </button>
@@ -534,6 +605,15 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose }: {
       )}
     </AnimatePresence>,
     document.body,
+      )}
+      <DestructiveSheet
+        open={confirmDelete}
+        title="Excluir entrevista"
+        message={detail ? `A entrevista #${detail.id} e todas as respostas serão removidas permanentemente. Esta ação não pode ser desfeita.` : ''}
+        onConfirm={() => { if (!deleting) handleDelete() }}
+        onCancel={() => setConfirmDelete(false)}
+      />
+    </>
   )
 }
 

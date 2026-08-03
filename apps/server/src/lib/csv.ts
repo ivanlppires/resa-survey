@@ -47,7 +47,12 @@ export function formatValue(value: unknown): string {
   return String(value)
 }
 
-export function buildCsv(questions: CsvQuestion[], rows: CsvSurveyRow[]): string {
+/**
+ * Fonte \u00FAnica de verdade das colunas do export. Produz o cabe\u00E7alho e a
+ * matriz de c\u00E9lulas (strings cruas, sem escaping) \u2014 consumida tanto pelo
+ * CSV quanto pelo XLSX, garantindo colunas id\u00EAnticas nos dois formatos.
+ */
+export function buildTable(questions: CsvQuestion[], rows: CsvSurveyRow[]): { header: string[]; matrix: string[][] } {
   const sorted = [...questions].sort((a, b) => a.sortOrder - b.sortOrder)
   const header = [...META_HEADERS]
   for (const q of sorted) {
@@ -55,7 +60,7 @@ export function buildCsv(questions: CsvQuestion[], rows: CsvSurveyRow[]): string
     if (q.hasTextOption) header.push(`${q.key}_texto`)
   }
 
-  const lines = [header.map(csvEscape).join(';')]
+  const matrix: string[][] = []
   for (const r of rows) {
     const cells = [
       String(r.id), r.clientId ?? '', r.settlementName, r.municipality, r.biome,
@@ -68,7 +73,16 @@ export function buildCsv(questions: CsvQuestion[], rows: CsvSurveyRow[]): string
       cells.push(formatValue(resp?.value))
       if (q.hasTextOption) cells.push(resp?.textValue ?? '')
     }
-    lines.push(cells.map(csvEscape).join(';'))
+    matrix.push(cells)
+  }
+  return { header, matrix }
+}
+
+export function buildCsv(questions: CsvQuestion[], rows: CsvSurveyRow[]): string {
+  const { header, matrix } = buildTable(questions, rows)
+  const lines = [header.map(csvEscape).join(';')]
+  for (const row of matrix) {
+    lines.push(row.map(csvEscape).join(';'))
   }
   return '\uFEFF' + lines.join('\r\n') + '\r\n'
 }

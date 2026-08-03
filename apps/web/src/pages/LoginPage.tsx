@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { useAuth } from '../lib/auth'
+import { ApiError } from '../lib/api'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -19,7 +20,13 @@ export default function LoginPage() {
       await login(email, password)
       navigate('/')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      if (!navigator.onLine) {
+        setError('Sem conexão com a internet. O primeiro acesso precisa de rede — conecte-se ao Wi-Fi ou aos dados móveis e tente novamente.')
+      } else if (err instanceof ApiError) {
+        setError(err.status === 401 ? 'Email ou senha incorretos.' : err.message)
+      } else {
+        setError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.')
+      }
     } finally {
       setLoading(false)
     }

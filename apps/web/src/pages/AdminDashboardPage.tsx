@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../lib/auth'
-import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { apiFetch } from '../lib/api'
 import ChangePasswordModal from '../components/ChangePasswordModal'
+import LogoutButton from '../components/LogoutButton'
 
 interface Settlement {
   id: number
@@ -118,8 +118,6 @@ const tabConfig: { key: Tab; label: string; icon: (active: boolean) => React.Rea
 ]
 
 export default function AdminDashboardPage() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('overview')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
 
@@ -144,18 +142,7 @@ export default function AdminDashboardPage() {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { logout(); navigate('/login') }}
-              className="text-[14px] font-semibold h-9 px-4 rounded-full bg-apple-text/5 text-apple-secondary hover:bg-apple-text/8 transition-colors flex items-center gap-1.5"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Sair
-            </motion.button>
+            <LogoutButton />
           </div>
         </div>
 

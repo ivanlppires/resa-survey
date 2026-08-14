@@ -287,7 +287,13 @@ function DestructiveSheet({ open, title, message, onConfirm, onCancel }: {
   )
 }
 
-/** Baixa um arquivo autenticado (export CSV/XLSX) disparando o download no navegador. */
+type ExportFormat = 'csv' | 'xlsx' | 'pdf'
+
+const exportFormats: ExportFormat[] = ['csv', 'xlsx', 'pdf']
+
+const exportLabels: Record<ExportFormat, string> = { csv: 'CSV', xlsx: 'Excel', pdf: 'PDF' }
+
+/** Baixa um arquivo autenticado (export CSV/XLSX/PDF) disparando o download no navegador. */
 async function downloadFile(path: string, filename: string): Promise<void> {
   const token = localStorage.getItem('resa_token')
   const res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
@@ -307,7 +313,7 @@ function OverviewTab() {
   const [users, setUsers] = useState<UserInfo[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
-  const [exporting, setExporting] = useState<'csv' | 'xlsx' | null>(null)
+  const [exporting, setExporting] = useState<ExportFormat | null>(null)
   const [detail, setDetail] = useState<SurveyDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
 
@@ -329,7 +335,7 @@ function OverviewTab() {
     apiFetch<SurveyOverview[]>('/surveys').then(setSurveys)
   }
 
-  const exportAll = async (format: 'csv' | 'xlsx') => {
+  const exportAll = async (format: ExportFormat) => {
     setExporting(format)
     try {
       const date = new Date().toISOString().slice(0, 10)
@@ -378,8 +384,8 @@ function OverviewTab() {
       </div>
 
       {surveys.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
-          {(['csv', 'xlsx'] as const).map((format) => (
+        <div className="grid grid-cols-3 gap-2">
+          {exportFormats.map((format) => (
             <motion.button
               key={format}
               whileTap={{ scale: 0.98 }}
@@ -392,7 +398,7 @@ function OverviewTab() {
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              {exporting === format ? 'Exportando...' : format === 'csv' ? 'Exportar CSV' : 'Exportar Excel'}
+              {exporting === format ? '...' : exportLabels[format]}
             </motion.button>
           ))}
         </div>
@@ -476,7 +482,7 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onD
   onClose: () => void
   onDeleted: () => void
 }) {
-  const [busy, setBusy] = useState<'csv' | 'xlsx' | null>(null)
+  const [busy, setBusy] = useState<ExportFormat | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -487,7 +493,7 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onD
     ? [...detail.responses].sort((a, b) => (byKey.get(a.questionKey)?.sortOrder ?? 999) - (byKey.get(b.questionKey)?.sortOrder ?? 999))
     : []
 
-  const downloadOne = async (format: 'csv' | 'xlsx') => {
+  const downloadOne = async (format: ExportFormat) => {
     if (!detail) return
     setBusy(format)
     try {
@@ -570,8 +576,8 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onD
             </div>
 
             <div className="px-5 pt-2 pb-4 space-y-2 border-t border-apple-separator" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
-              <div className="grid grid-cols-2 gap-2">
-                {(['csv', 'xlsx'] as const).map((format) => (
+              <div className="grid grid-cols-3 gap-2">
+                {exportFormats.map((format) => (
                   <button
                     key={format}
                     onClick={() => downloadOne(format)}
@@ -583,7 +589,7 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onD
                       <polyline points="7 10 12 15 17 10" />
                       <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    {busy === format ? 'Baixando...' : format === 'csv' ? 'Baixar CSV' : 'Baixar Excel'}
+                    {busy === format ? '...' : exportLabels[format]}
                   </button>
                 ))}
               </div>

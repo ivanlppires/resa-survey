@@ -5,6 +5,7 @@ import { db } from '../db/index.js'
 import { surveys, responses, settlements, users, questions } from '../db/schema.js'
 import { buildCsv, buildTable, type CsvQuestion, type CsvSurveyRow } from '../lib/csv.js'
 import { buildXlsx } from '../lib/xlsx.js'
+import { buildSurveyReportPdf, type PdfQuestion } from '../lib/pdf-report.js'
 
 const exportQuery = z.object({
   settlementId: z.coerce.number().optional(),
@@ -12,12 +13,21 @@ const exportQuery = z.object({
 })
 
 /** Coleta as perguntas e as linhas de entrevistas para o export, aplicando o filtro. */
-async function gatherExport(query: z.infer<typeof exportQuery>): Promise<{ csvQuestions: CsvQuestion[]; rows: CsvSurveyRow[] }> {
+async function gatherExport(query: z.infer<typeof exportQuery>): Promise<{ csvQuestions: CsvQuestion[]; pdfQuestions: PdfQuestion[]; rows: CsvSurveyRow[] }> {
   const questionRows = await db.select().from(questions).orderBy(asc(questions.sortOrder))
   const csvQuestions: CsvQuestion[] = questionRows.map((q) => ({
     key: q.key,
     sortOrder: q.sortOrder,
     hasTextOption: (q.options ?? []).some((o) => !!o.hasTextInput),
+  }))
+  const pdfQuestions: PdfQuestion[] = questionRows.map((q) => ({
+    key: q.key,
+    number: q.number,
+    text: q.text,
+    type: q.type,
+    section: q.section,
+    options: q.options,
+    sortOrder: q.sortOrder,
   }))
 
   // surveyId (uma entrevista) exporta aquele registro independentemente do status;
@@ -78,7 +88,7 @@ async function gatherExport(query: z.infer<typeof exportQuery>): Promise<{ csvQu
     responses: bySurvey.get(s.id) ?? new Map(),
   }))
 
-  return { csvQuestions, rows }
+  return { csvQuestions, pdfQuestions, rows }
 }
 
 function filenameBase(query: z.infer<typeof exportQuery>): string {
@@ -102,5 +112,13 @@ export async function exportRoutes(app: FastifyInstance) {
     reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     reply.header('Content-Disposition', `attachment; filename="${filenameBase(query)}.xlsx"`)
     return buildXlsx(header, matrix)
+  })
+
+  app.get('/api/admin/export.pdf', { preHandler: [app.requireAdmin] }, async (request, reply) => {
+    const query = exportQuery.parse(request.query)
+    const { pdfQuestions, rows } = await gatherExport(query)
+    reply.header('Content-Type', 'application/pdf')
+    reply.header('Content-Disposition', `attachment; filename="${filenameBase(query)}.pdf"`)
+    return buildSurveyReportPdf(pdfQuestions, rows, new Date())
   })
 }

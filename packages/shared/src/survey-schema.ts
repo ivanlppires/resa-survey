@@ -6,6 +6,8 @@ export interface QuestionOption {
   value: string
   label: string
   hasTextInput?: boolean
+  /** Marcar esta alternativa desmarca as demais (ex.: "Nenhuma"). */
+  exclusive?: boolean
 }
 
 export interface ConditionalRule {
@@ -23,6 +25,13 @@ export interface Question {
   scaleMax?: number
   conditional?: ConditionalRule
   section: SurveySection
+  /** Versão do questionário a que a pergunta pertence. */
+  version: number
+  /** Linhas de um mesmo quadro compartilham groupKey/groupText. */
+  groupKey: string | null
+  groupText: string | null
+  subsection: string | null
+  maxSelections: number | null
 }
 
 export type SurveyStatus = 'draft' | 'in_progress' | 'completed' | 'synced'
@@ -84,4 +93,9 @@ export interface QuestionRecord {
   conditional: ConditionalRule | null
   sortOrder: number
   active: boolean
+  version: number
+  groupKey: string | null
+  groupText: string | null
+  subsection: string | null
+  maxSelections: number | null
 }

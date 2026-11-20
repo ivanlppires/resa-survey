@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { db, type LocalQuestion, type LocalSurvey } from '../lib/db'
-import { getQuestions } from '../lib/sync'
+import { getQuestionsForVersion } from '../lib/sync'
 import { computeProgress, isConditionMet, unansweredBySection } from '../lib/progress'
 
 const sectionLabels = {
@@ -38,7 +38,7 @@ export default function SurveyPage() {
     async function load() {
       const s = await db.surveys.where('localId').equals(localId!).first()
       setSurvey(s ?? null)
-      const qs = await getQuestions()
+      const qs = s ? await getQuestionsForVersion(s.questionnaireVersion) : []
       setQuestions(qs)
       const existing = await db.responses.where('surveyLocalId').equals(localId!).toArray()
       const values = new Map<string, unknown>()

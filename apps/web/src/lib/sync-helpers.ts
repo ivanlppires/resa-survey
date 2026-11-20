@@ -19,6 +19,7 @@ export function buildSyncPayload(
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
       completedAt: s.completedAt,
+      questionnaireVersion: s.questionnaireVersion,
     },
     responses: (responsesByLocalId.get(s.localId) ?? []).map((r) => ({
       questionKey: r.questionKey,

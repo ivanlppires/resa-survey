@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { db, type LocalQuestion, type LocalSurvey } from '../lib/db'
-import { getQuestions } from '../lib/sync'
+import { adoptCurrentVersionIfEmpty, getQuestionsForVersion } from '../lib/sync'
 import { computeProgress, isConditionMet, unansweredBySection } from '../lib/progress'
+import { buildItems, toggleOption } from '../lib/questionnaire'
 
 const sectionLabels = {
   socioeconomic: 'Socioec.',
@@ -36,9 +37,11 @@ export default function SurveyPage() {
 
   useEffect(() => {
     async function load() {
+      // A versão é decidida uma vez, ao abrir, e vale para toda a sessão da tela.
+      const version = await adoptCurrentVersionIfEmpty(localId!)
       const s = await db.surveys.where('localId').equals(localId!).first()
       setSurvey(s ?? null)
-      const qs = await getQuestions()
+      const qs = version !== null ? await getQuestionsForVersion(version) : []
       setQuestions(qs)
       const existing = await db.responses.where('surveyLocalId').equals(localId!).toArray()
       const values = new Map<string, unknown>()
@@ -99,6 +102,23 @@ export default function SurveyPage() {
     }
   }, [localId, readOnly, responses, questions])
 
+  /** Remove a resposta de uma pergunta (ex.: linha de quadro que ficou sem nenhuma marcação). */
+  const clearResponse = useCallback(async (questionKey: string) => {
+    if (readOnly) return
+    setResponses((prev) => {
+      const next = new Map(prev)
+      next.delete(questionKey)
+      return next
+    })
+    setTextValues((prev) => {
+      const next = new Map(prev)
+      next.delete(questionKey)
+      return next
+    })
+    await db.responses.where('[surveyLocalId+questionKey]').equals([localId!, questionKey]).delete()
+    await db.surveys.where('localId').equals(localId!).modify({ updatedAt: new Date().toISOString() })
+  }, [localId, readOnly])
+
   const completeSurvey = async () => {
     const now = new Date().toISOString()
     await db.surveys.where('localId').equals(localId!).modify({
@@ -112,6 +132,10 @@ export default function SurveyPage() {
   const sectionQuestions = questions.filter(
     (q) => q.section === currentSection && isConditionMet(q, responses)
   )
+
+  const sectionItems = buildItems(sectionQuestions)
+  // Sem perguntas da versão desta entrevista (nem em cache, nem rede): não há o que mostrar nem finalizar.
+  const missingQuestions = questions.length === 0
 
   const progress = computeProgress(questions, responses)
   const unanswered = unansweredBySection(questions, responses)
@@ -204,26 +228,60 @@ export default function SurveyPage() {
             transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="space-y-3.5"
           >
-            {sectionQuestions.map((q, i) => (
-              <motion.div
-                key={q.key}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03, duration: 0.25 }}
-              >
-                <QuestionCard
-                  question={q}
-                  value={responses.get(q.key)}
-                  textValue={textValues.get(q.key) ?? ''}
-                  readOnly={!!readOnly}
-                  onChange={(val, text) => saveResponse(q.key, val, text)}
-                />
-              </motion.div>
-            ))}
+            {missingQuestions && (
+              <div className="bg-apple-card rounded-2xl p-5 text-center shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+                <p className="text-[16px] font-semibold text-apple-text">Perguntas indisponíveis</p>
+                <p className="text-[14px] text-apple-secondary mt-1">
+                  Conecte-se à internet para baixar as perguntas desta entrevista. As respostas já dadas continuam salvas.
+                </p>
+              </div>
+            )}
+            {sectionItems.map((item, i) => {
+              const first = item.kind === 'group' ? item.rows[0] : item.question
+              const prev = i > 0 ? sectionItems[i - 1] : null
+              const prevSubsection = prev ? (prev.kind === 'group' ? prev.rows[0] : prev.question).subsection : null
+              const showSubsection = !!first.subsection && first.subsection !== prevSubsection
+              return (
+                <motion.div
+                  key={first.key}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25 }}
+                >
+                  {showSubsection && (
+                    <h2 className={`text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1 mb-2 ${i > 0 ? 'mt-4' : ''}`}>
+                      {first.subsection}
+                    </h2>
+                  )}
+                  {item.kind === 'group' ? (
+                    <GridCard
+                      number={item.number}
+                      text={item.text}
+                      rows={item.rows}
+                      responses={responses}
+                      textValues={textValues}
+                      readOnly={!!readOnly}
+                      onChange={(key, val, text) => {
+                        if (Array.isArray(val) && val.length === 0) clearResponse(key)
+                        else saveResponse(key, val, text)
+                      }}
+                    />
+                  ) : (
+                    <QuestionCard
+                      question={item.question}
+                      value={responses.get(item.question.key)}
+                      textValue={textValues.get(item.question.key) ?? ''}
+                      readOnly={!!readOnly}
+                      onChange={(val, text) => saveResponse(item.question.key, val, text)}
+                    />
+                  )}
+                </motion.div>
+              )
+            })}
           </motion.div>
         </AnimatePresence>
 
-        {currentSection === 'environmental' && !readOnly && (
+        {currentSection === 'environmental' && !readOnly && !missingQuestions && (
           <div className="mt-6 safe-bottom pb-4">
             <motion.button
               onClick={handleFinishClick}
@@ -318,6 +376,7 @@ function QuestionCard({ question, value, textValue, readOnly, onChange }: {
       {question.type === 'multiple_choice' && question.options && (
         <MultipleChoice
           options={question.options}
+          maxSelections={question.maxSelections ?? null}
           value={(value as string[]) ?? []}
           textValue={textValue}
           readOnly={readOnly}
@@ -342,6 +401,77 @@ function QuestionCard({ question, value, textValue, readOnly, onChange }: {
           placeholder="Digite sua resposta..."
         />
       )}
+    </div>
+  )
+}
+
+/**
+ * Quadro (ex.: produtos × destino, serviços × avaliação): um cartão com o
+ * enunciado e uma linha por item, cada linha com suas alternativas lado a lado.
+ * Cada linha é uma pergunta própria e grava sua própria resposta.
+ */
+function GridCard({ number, text, rows, responses, textValues, readOnly, onChange }: {
+  number: number
+  text: string
+  rows: LocalQuestion[]
+  responses: Map<string, unknown>
+  textValues: Map<string, string>
+  readOnly: boolean
+  onChange: (questionKey: string, val: unknown, textValue?: string) => void
+}) {
+  return (
+    <div className="bg-apple-card rounded-2xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)]">
+      <p className="text-[12px] font-semibold text-apple-green tracking-wide uppercase mb-1">Pergunta {number}</p>
+      <p className="text-[16px] font-semibold text-apple-text leading-snug mb-1">{text}</p>
+      <div className="divide-y divide-apple-separator">
+        {rows.map((row) => {
+          const options = row.options ?? []
+          const multiple = row.type === 'multiple_choice'
+          const raw = responses.get(row.key)
+          const selected: string[] = multiple ? ((raw as string[]) ?? []) : raw != null ? [String(raw)] : []
+          const hasText = options.some((o) => o.hasTextInput)
+          const textValue = textValues.get(row.key) ?? ''
+          const pick = (optValue: string) => {
+            if (readOnly) return
+            if (!multiple) return onChange(row.key, optValue)
+            const next = toggleOption(selected, optValue, options, null)
+            onChange(row.key, next, hasText && next.length > 0 ? textValue : undefined)
+          }
+          return (
+            <div key={row.key} className="py-3.5 last:pb-0">
+              <p className="text-[15px] font-medium text-apple-text leading-snug mb-2">{row.text}</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={row.text}>
+                {options.map((opt) => {
+                  const on = selected.includes(opt.value)
+                  return (
+                    <motion.button
+                      key={opt.value}
+                      whileTap={readOnly ? undefined : { scale: 0.96 }}
+                      onClick={() => pick(opt.value)}
+                      disabled={readOnly}
+                      aria-pressed={on}
+                      className={`flex-1 min-w-[72px] min-h-[44px] px-3 py-2 rounded-xl text-[14px] font-medium transition-all ${
+                        on
+                          ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
+                          : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
+                      } ${readOnly ? 'cursor-default' : ''}`}
+                    >
+                      {opt.label}
+                    </motion.button>
+                  )
+                })}
+              </div>
+              {hasText && selected.length > 0 && (
+                <OptionTextInput
+                  value={textValue}
+                  readOnly={readOnly}
+                  onCommit={(t) => onChange(row.key, multiple ? selected : selected[0], t)}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -415,8 +545,9 @@ function SingleChoice({ options, value, textValue, readOnly, onChange }: {
   )
 }
 
-function MultipleChoice({ options, value, textValue, readOnly, onChange }: {
-  options: { value: string; label: string; hasTextInput?: boolean }[]
+function MultipleChoice({ options, maxSelections, value, textValue, readOnly, onChange }: {
+  options: { value: string; label: string; hasTextInput?: boolean; exclusive?: boolean }[]
+  maxSelections: number | null
   value: string[]
   textValue: string
   readOnly: boolean
@@ -424,27 +555,36 @@ function MultipleChoice({ options, value, textValue, readOnly, onChange }: {
 }) {
   const textOption = options.find((o) => o.hasTextInput)
 
+  const atLimit = maxSelections != null && value.filter((v) => !options.find((o) => o.value === v)?.exclusive).length >= maxSelections
+
   const toggle = (optValue: string) => {
-    const next = value.includes(optValue) ? value.filter((v) => v !== optValue) : [...value, optValue]
+    const next = toggleOption(value, optValue, options, maxSelections)
+    if (next === value) return // limite atingido
     const keepText = textOption && next.includes(textOption.value) ? textValue : undefined
     onChange(next, keepText)
   }
 
   return (
     <div className="space-y-2">
+      {maxSelections != null && (
+        <p className={`text-[13px] font-medium ${atLimit ? 'text-apple-green' : 'text-apple-secondary'}`}>
+          Marque até {maxSelections} · {value.length} marcada{value.length === 1 ? '' : 's'}
+        </p>
+      )}
       {options.map((opt) => {
         const selected = value.includes(opt.value)
+        const blocked = !selected && atLimit && !opt.exclusive
         return (
           <div key={opt.value}>
             <motion.button
-              whileTap={readOnly ? undefined : { scale: 0.98 }}
+              whileTap={readOnly || blocked ? undefined : { scale: 0.98 }}
               onClick={() => { if (!readOnly) toggle(opt.value) }}
-              disabled={readOnly}
+              disabled={readOnly || blocked}
               className={`w-full text-left px-4 py-3.5 rounded-xl transition-all text-[15px] font-medium ${
                 selected
                   ? 'bg-apple-green/10 text-apple-green ring-1 ring-apple-green/30'
                   : 'bg-apple-bg text-apple-text hover:bg-apple-text/4'
-              } ${readOnly ? 'cursor-default' : ''}`}
+              } ${readOnly ? 'cursor-default' : ''} ${blocked ? 'opacity-40' : ''}`}
             >
               <span className="flex items-center gap-3">
                 <span className={`w-[22px] h-[22px] rounded-[6px] border-2 flex items-center justify-center flex-shrink-0 transition-all ${

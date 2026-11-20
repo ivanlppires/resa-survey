@@ -13,6 +13,7 @@ export const syncPayloadSchema = z.object({
       createdAt: z.string(),
       updatedAt: z.string(),
       completedAt: z.string().nullable().optional(),
+      questionnaireVersion: z.number().int().positive().optional(),
     }),
     responses: z.array(z.object({
       questionKey: z.string(),

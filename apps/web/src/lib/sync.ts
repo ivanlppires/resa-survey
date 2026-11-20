@@ -1,25 +1,78 @@
 import { db, type LocalQuestion, type LocalResponse, type LocalSettlement } from './db'
 import { apiFetch, ApiError } from './api'
 import { buildSyncPayload, resolveSyncOutcome } from './sync-helpers'
+import { versionsToKeep } from './questionnaire'
 import type { SyncResult } from '@resa/shared'
 
+/**
+ * Atualiza o cache com as perguntas da versão vigente. Mantém no cache as
+ * versões de entrevistas locais ainda não sincronizadas, para que possam ser
+ * concluídas offline com o questionário em que começaram. Sem rede, o cache
+ * fica como está.
+ */
 export async function syncQuestions(): Promise<void> {
+  let fetched: LocalQuestion[]
   try {
-    const questions = await apiFetch<LocalQuestion[]>('/questions')
-    await db.questions.clear()
-    await db.questions.bulkAdd(questions)
+    fetched = await apiFetch<LocalQuestion[]>('/questions?version=current')
   } catch {
-    // Offline — usa perguntas em cache
+    return // Offline — usa perguntas em cache
   }
+  if (fetched.length === 0) return
+  const current = fetched[0].version
+
+  await db.transaction('rw', db.questions, db.surveys, async () => {
+    // Só o cache de perguntas muda aqui. A versão de uma entrevista nunca é
+    // alterada em segundo plano: ela pode estar aberta na tela com as perguntas
+    // em que começou (ver adoptCurrentVersionIfEmpty).
+    const surveys = await db.surveys.toArray()
+    const keep = versionsToKeep(surveys, current)
+    await db.questions.filter((q) => q.version === current || !keep.has(q.version)).delete()
+    await db.questions.bulkPut(fetched)
+  })
 }
 
-export async function getQuestions(): Promise<LocalQuestion[]> {
-  let questions = await db.questions.orderBy('sortOrder').toArray()
-  if (questions.length === 0) {
-    await syncQuestions()
-    questions = await db.questions.orderBy('sortOrder').toArray()
+/**
+ * Chamada ao ABRIR uma entrevista, antes de carregar as perguntas: um rascunho
+ * de versão anterior que ainda não tem nenhuma resposta passa para a versão
+ * vigente em cache (nada foi coletado nele). Com qualquer resposta, ou já
+ * concluída/sincronizada, a entrevista fica na versão em que começou.
+ * Devolve a versão resultante, ou null se a entrevista não existe.
+ */
+export async function adoptCurrentVersionIfEmpty(localId: string): Promise<number | null> {
+  return db.transaction('rw', db.questions, db.surveys, db.responses, async () => {
+    const survey = await db.surveys.where('localId').equals(localId).first()
+    if (!survey) return null
+    if (survey.status !== 'draft' && survey.status !== 'in_progress') return survey.questionnaireVersion
+    const cached = (await db.questions.orderBy('version').last())?.version ?? null
+    if (cached === null || cached <= survey.questionnaireVersion) return survey.questionnaireVersion
+    const answered = await db.responses.where('surveyLocalId').equals(localId).count()
+    if (answered > 0) return survey.questionnaireVersion
+    await db.surveys.update(survey.id!, { questionnaireVersion: cached })
+    return cached
+  })
+}
+
+/** Maior versão de questionário disponível no cache, ou null se o cache está vazio. */
+export async function getCurrentCachedVersion(): Promise<number | null> {
+  const last = await db.questions.orderBy('version').last()
+  return last?.version ?? null
+}
+
+/**
+ * Perguntas de UMA versão, em ordem. Do cache; se a versão não está em cache
+ * (ex.: rascunho antigo), tenta baixar. Devolve [] quando não há cache nem
+ * rede — quem chama deve avisar o usuário, nunca cair em outra versão.
+ */
+export async function getQuestionsForVersion(version: number): Promise<LocalQuestion[]> {
+  const cached = await db.questions.where('version').equals(version).sortBy('sortOrder')
+  if (cached.length > 0) return cached
+  try {
+    const fetched = await apiFetch<LocalQuestion[]>(`/questions?version=${version}`)
+    await db.questions.bulkPut(fetched)
+    return [...fetched].sort((a, b) => a.sortOrder - b.sortOrder)
+  } catch {
+    return []
   }
-  return questions
 }
 
 interface ApiSettlement {

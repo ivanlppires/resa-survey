@@ -29,6 +29,7 @@ interface SurveyOverview {
   status: string
   createdAt: string
   completedAt: string | null
+  questionnaireVersion: number
 }
 
 interface Question {
@@ -43,6 +44,9 @@ interface Question {
   scaleMax: number | null
   sortOrder: number
   active: boolean
+  version: number
+  groupKey: string | null
+  groupText: string | null
 }
 
 interface SurveyDetail extends SurveyOverview {
@@ -307,6 +311,46 @@ async function downloadFile(path: string, filename: string): Promise<void> {
   URL.revokeObjectURL(url)
 }
 
+/** Versões do questionário presentes nas perguntas (crescente) e a vigente (a maior). */
+function questionnaireVersions(questions: Question[]): { versions: number[]; current: number } {
+  const versions = [...new Set(questions.map((q) => q.version))].sort((a, b) => a - b)
+  return { versions, current: versions[versions.length - 1] ?? 1 }
+}
+
+/**
+ * Alterna entre o questionário vigente e os arquivados. As entrevistas de uma
+ * versão só fazem sentido com as perguntas daquela versão, então painel,
+ * perguntas e exportação sempre mostram uma versão por vez.
+ */
+function VersionSwitch({ versions, current, value, onChange }: {
+  versions: number[]
+  current: number
+  value: number
+  onChange: (version: number) => void
+}) {
+  if (versions.length < 2) return null
+  const ordered = [...versions].sort((a, b) => b - a)
+  return (
+    <div className="flex bg-apple-text/6 rounded-[10px] p-[2px]" role="tablist" aria-label="Versão do questionário">
+      {ordered.map((v) => (
+        <button
+          key={v}
+          role="tab"
+          aria-selected={value === v}
+          onClick={() => onChange(v)}
+          className={`flex-1 text-[13px] font-semibold py-2 px-2 rounded-[8px] transition-colors duration-200 ${
+            value === v
+              ? 'bg-white text-apple-text shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]'
+              : 'text-apple-secondary'
+          }`}
+        >
+          {v === current ? `Questionário revisado (v${v})` : `Arquivo (v${v})`}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function OverviewTab() {
   const [surveys, setSurveys] = useState<SurveyOverview[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
@@ -316,6 +360,8 @@ function OverviewTab() {
   const [exporting, setExporting] = useState<ExportFormat | null>(null)
   const [detail, setDetail] = useState<SurveyDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [selectedVersion, setSelectedVersion] = useState<number | null>(null)
+  const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -331,6 +377,10 @@ function OverviewTab() {
     }).finally(() => setLoading(false))
   }, [])
 
+  const { versions, current } = questionnaireVersions(questions)
+  const version = selectedVersion ?? current
+  const versionSurveys = surveys.filter((s) => s.questionnaireVersion === version)
+
   const reloadSurveys = () => {
     apiFetch<SurveyOverview[]>('/surveys').then(setSurveys)
   }
@@ -339,7 +389,7 @@ function OverviewTab() {
     setExporting(format)
     try {
       const date = new Date().toISOString().slice(0, 10)
-      await downloadFile(`/api/admin/export.${format}`, `resa-survey-${date}.${format}`)
+      await downloadFile(`/api/admin/export.${format}?version=${version}`, `resa-survey-v${version}-${date}.${format}`)
     } catch {
       alert(`Falha ao exportar ${format.toUpperCase()}`)
     } finally {
@@ -359,13 +409,21 @@ function OverviewTab() {
 
   if (loading) return <p className="text-center text-[15px] text-apple-secondary py-12">Carregando...</p>
 
-  const synced = surveys.filter(s => s.status === 'synced').length
+  const synced = versionSurveys.filter(s => s.status === 'synced').length
+  const archived = version < current
+  const visibleSurveys = showAll ? versionSurveys : versionSurveys.slice(0, 10)
 
   return (
     <div className="space-y-5">
+      <VersionSwitch versions={versions} current={current} value={version} onChange={(v) => { setSelectedVersion(v); setShowAll(false) }} />
+      {archived && (
+        <p className="text-[13px] text-apple-secondary px-1 -mt-2">
+          Entrevistas feitas com o questionário anterior. Ficam guardadas como foram coletadas e podem ser consultadas e exportadas.
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Questionários', value: surveys.length, color: 'text-apple-blue' },
+          { label: archived ? 'Entrevistas no arquivo' : 'Questionários', value: versionSurveys.length, color: 'text-apple-blue' },
           { label: 'Sincronizados', value: synced, color: 'text-apple-green' },
           { label: 'Assentamentos', value: settlements.length, color: 'text-apple-orange' },
           { label: 'Usuários', value: users.length, color: 'text-apple-purple' },
@@ -383,7 +441,7 @@ function OverviewTab() {
         ))}
       </div>
 
-      {surveys.length > 0 && (
+      {versionSurveys.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {exportFormats.map((format) => (
             <motion.button
@@ -404,7 +462,7 @@ function OverviewTab() {
         </div>
       )}
 
-      {surveys.length === 0 ? (
+      {versionSurveys.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-14 h-14 rounded-full bg-apple-secondary/8 flex items-center justify-center mx-auto mb-4">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#808086" strokeWidth="1.5">
@@ -412,19 +470,21 @@ function OverviewTab() {
               <rect x="9" y="3" width="6" height="4" rx="1"/>
             </svg>
           </div>
-          <p className="text-[16px] font-medium text-apple-secondary">Nenhum questionário sincronizado ainda.</p>
+          <p className="text-[16px] font-medium text-apple-secondary">{archived ? 'Nenhuma entrevista nesta versão.' : 'Nenhum questionário sincronizado ainda.'}</p>
         </div>
       ) : (
         <div className="space-y-2.5">
-          <h2 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1">Últimos questionários</h2>
-          {surveys.slice(0, 10).map((s, i) => {
+          <h2 className="text-[13px] font-semibold text-apple-secondary uppercase tracking-wide px-1">
+            {showAll || versionSurveys.length <= 10 ? 'Questionários' : 'Últimos questionários'}
+          </h2>
+          {visibleSurveys.map((s, i) => {
             const settlement = settlements.find(st => st.id === s.settlementId)
             return (
               <motion.button
                 key={s.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
+                transition={{ delay: Math.min(i, 10) * 0.03 }}
                 onClick={() => openDetail(s.id)}
                 disabled={detailLoading}
                 className="w-full text-left bg-apple-card rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-transform"
@@ -451,6 +511,14 @@ function OverviewTab() {
               </motion.button>
             )
           })}
+          {versionSurveys.length > 10 && (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full h-11 rounded-2xl bg-apple-text/5 text-[14px] font-semibold text-apple-text hover:bg-apple-text/8 transition-colors"
+            >
+              {showAll ? 'Mostrar só as 10 mais recentes' : `Ver todas (${versionSurveys.length})`}
+            </button>
+          )}
         </div>
       )}
 
@@ -493,12 +561,22 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onD
     ? [...detail.responses].sort((a, b) => (byKey.get(a.questionKey)?.sortOrder ?? 999) - (byKey.get(b.questionKey)?.sortOrder ?? 999))
     : []
 
+  // Linhas de um mesmo quadro aparecem juntas sob o enunciado do quadro.
+  type DetailResponse = (typeof sortedResponses)[number]
+  const detailBlocks: { key: string; group: Question | null; rows: DetailResponse[] }[] = []
+  for (const r of sortedResponses) {
+    const q = byKey.get(r.questionKey)
+    const last = detailBlocks[detailBlocks.length - 1]
+    if (q?.groupKey && last?.group?.groupKey === q.groupKey) last.rows.push(r)
+    else detailBlocks.push({ key: r.questionKey, group: q?.groupKey ? q : null, rows: [r] })
+  }
+
   const downloadOne = async (format: ExportFormat) => {
     if (!detail) return
     setBusy(format)
     try {
       const date = new Date().toISOString().slice(0, 10)
-      await downloadFile(`/api/admin/export.${format}?surveyId=${detail.id}`, `resa-entrevista-${detail.id}-${date}.${format}`)
+      await downloadFile(`/api/admin/export.${format}?surveyId=${detail.id}`, `resa-entrevista-${detail.id}-v${detail.questionnaireVersion}-${date}.${format}`)
     } catch {
       alert(`Falha ao baixar ${format.toUpperCase()}`)
     } finally {
@@ -557,7 +635,29 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onD
               {sortedResponses.length === 0 ? (
                 <p className="text-[14px] text-apple-tertiary text-center py-6">Sem respostas registradas.</p>
               ) : (
-                sortedResponses.map((r) => {
+                detailBlocks.map((block) => {
+                  if (block.group) {
+                    return (
+                      <div key={block.key} className="pb-3 border-b border-apple-separator last:border-b-0">
+                        <p className="text-[12px] font-semibold text-apple-green uppercase tracking-wide">Pergunta {block.group.number}</p>
+                        <p className="text-[14px] text-apple-text mt-0.5">{block.group.groupText}</p>
+                        <dl className="mt-1.5 space-y-1">
+                          {block.rows.map((r) => {
+                            const rq = byKey.get(r.questionKey)
+                            return (
+                              <div key={r.questionKey} className="flex items-baseline justify-between gap-3">
+                                <dt className="text-[13px] text-apple-text min-w-0">
+                                  {rq?.text ?? r.questionKey}{r.textValue ? ` (${r.textValue})` : ''}
+                                </dt>
+                                <dd className="text-[14px] font-semibold text-apple-text text-right shrink-0 max-w-[55%]">{formatResponseValue(rq, r.value)}</dd>
+                              </div>
+                            )
+                          })}
+                        </dl>
+                      </div>
+                    )
+                  }
+                  const r = block.rows[0]
                   const q = byKey.get(r.questionKey)
                   return (
                     <div key={r.questionKey} className="pb-3 border-b border-apple-separator last:border-b-0">
@@ -696,6 +796,7 @@ function QuestionsTab() {
   const [saving, setSaving] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [filterSection, setFilterSection] = useState<string>('all')
+  const [selectedVersion, setSelectedVersion] = useState<number | null>(null)
 
   const loadQuestions = () => {
     apiFetch<Question[]>('/admin/questions').then(setQuestions).finally(() => setLoading(false))
@@ -788,15 +889,23 @@ function QuestionsTab() {
     },
   ]
 
-  const filtered = filterSection === 'all' ? questions : questions.filter(q => q.section === filterSection)
-  const activeCount = questions.filter(q => q.active).length
+  const { versions, current } = questionnaireVersions(questions)
+  const version = selectedVersion ?? current
+  const archived = version < current
+  const versionQuestions = questions.filter((q) => q.version === version)
+  const filtered = filterSection === 'all' ? versionQuestions : versionQuestions.filter(q => q.section === filterSection)
+  const activeCount = versionQuestions.filter(q => q.active).length
 
   return (
     <div className="space-y-4">
+      <VersionSwitch versions={versions} current={current} value={version} onChange={(v) => { setSelectedVersion(v); setEditingId(null) }} />
       <div className="flex items-center justify-between px-1">
         <p className="text-[13px] text-apple-secondary">
-          <span className="font-semibold text-apple-text">{activeCount}</span> ativas de <span className="font-semibold text-apple-text">{questions.length}</span>
+          <span className="font-semibold text-apple-text">{activeCount}</span> ativas de <span className="font-semibold text-apple-text">{versionQuestions.length}</span>
         </p>
+        {archived && (
+          <span className="text-[12px] font-semibold px-2.5 py-[3px] rounded-full bg-apple-text/6 text-apple-secondary">Arquivo — somente leitura</span>
+        )}
       </div>
 
       {/* Filter chips */}
@@ -883,6 +992,9 @@ function QuestionsTab() {
                         </span>
                       )}
                     </div>
+                    {q.groupText && (
+                      <p className="text-[12px] text-apple-secondary leading-snug mb-0.5">Quadro: {q.groupText}</p>
+                    )}
                     <p className="text-[14px] text-apple-text leading-snug">{q.text}</p>
                     {q.options && q.options.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -895,8 +1007,8 @@ function QuestionsTab() {
                     )}
                   </div>
                 </div>
-                {/* Action buttons - mobile-friendly row */}
-                <div className="flex gap-2 mt-3 pt-3 border-t border-apple-separator">
+                {/* Action buttons - mobile-friendly row (versão arquivada não tem ações) */}
+                {!archived && <div className="flex gap-2 mt-3 pt-3 border-t border-apple-separator">
                   {q.active ? (
                     <>
                       <motion.button
@@ -923,7 +1035,7 @@ function QuestionsTab() {
                       Reativar
                     </motion.button>
                   )}
-                </div>
+                </div>}
               </>
             )}
           </motion.div>

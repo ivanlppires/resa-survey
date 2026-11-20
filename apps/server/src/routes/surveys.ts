@@ -5,6 +5,7 @@ import { surveys, responses, syncLog } from '../db/schema.js'
 import { eq, desc } from 'drizzle-orm'
 import crypto from 'node:crypto'
 import { syncPayloadSchema } from './sync-schema.js'
+import { deriveQuestionnaireVersion, getCurrentVersion, loadVersionByKey } from '../lib/questionnaire-version.js'
 
 export async function surveyRoutes(app: FastifyInstance) {
   app.get('/api/surveys', { preHandler: [app.authenticate] }, async (request) => {
@@ -40,6 +41,7 @@ export async function surveyRoutes(app: FastifyInstance) {
       interviewerId: body.interviewerId,
       lotNumber: body.lotNumber ?? null,
       status: 'draft',
+      questionnaireVersion: await getCurrentVersion(db),
     }).returning()
 
     return reply.status(201).send(created)
@@ -67,6 +69,7 @@ export async function surveyRoutes(app: FastifyInstance) {
     const payloadHash = crypto.createHash('sha256').update(JSON.stringify(body.surveys)).digest('hex')
     const syncedLocalIds: string[] = []
     const errors: { localId: string; message: string }[] = []
+    const versionByKey = await loadVersionByKey(db)
 
     const isClientIdConflict = (e: unknown): boolean => {
       if (typeof e !== 'object' || e === null) return false
@@ -90,9 +93,16 @@ export async function surveyRoutes(app: FastifyInstance) {
             continue
           }
         }
+        const { version: questionnaireVersion, mixed } = deriveQuestionnaireVersion(
+          item.responses.map((r) => r.questionKey), versionByKey, item.metadata.questionnaireVersion,
+        )
+        if (mixed) {
+          request.log.warn({ localId, questionnaireVersion }, 'sync: entrevista com respostas de mais de uma versão do questionário')
+        }
         await db.transaction(async (tx) => {
           const [created] = await tx.insert(surveys).values({
             clientId: localId,
+            questionnaireVersion,
             settlementId: item.metadata.settlementId,
             interviewerId: request.user.id,
             lotNumber: item.metadata.lotNumber ?? null,

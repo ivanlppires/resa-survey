@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { buildCsv, csvEscape, formatValue, type CsvQuestion, type CsvSurveyRow } from './csv.js'
+import { buildCsv, buildTable, csvEscape, formatValue, type CsvQuestion, type CsvSurveyRow } from './csv.js'
+import { questionsV1 } from '../db/questionnaires/v1.js'
+import { questionsV2 } from '../db/questionnaires/v2.js'
+import { toCsvQuestions } from './questionnaire-version.js'
 
 const BOM = '\uFEFF'
 
@@ -76,5 +79,28 @@ describe('buildCsv', () => {
     expect(cells[7]).toBe('')
     expect(cells[13]).toBe('')
     expect(cells[16]).toBe('')
+  })
+})
+
+describe('colunas do export por versão', () => {
+  it('v1 mantém exatamente as colunas de antes do versionamento', () => {
+    const { header } = buildTable(toCsvQuestions(questionsV1), [])
+    expect(header.slice(0, 13)).toEqual([
+      'id', 'client_id', 'assentamento', 'municipio', 'bioma', 'entrevistador', 'email_entrevistador',
+      'lote', 'gps_lat', 'gps_lng', 'criado_em', 'concluido_em', 'sincronizado_em',
+    ])
+    expect(header.some((h) => h.startsWith('v2_'))).toBe(false)
+    expect(header.filter((h) => !h.endsWith('_texto')).length).toBe(13 + 70)
+    expect(header).toMatchSnapshot()
+  })
+
+  it('v2 tem uma coluna por linha de quadro e _texto para "Outro"', () => {
+    const { header } = buildTable(toCsvQuestions(questionsV2), [])
+    const cols = header.slice(13)
+    expect(cols.every((h) => h.startsWith('v2_'))).toBe(true)
+    expect(cols.filter((h) => !h.endsWith('_texto')).length).toBe(74)
+    expect(cols).toContain('v2_q27_saude')
+    expect(cols).toContain('v2_q38j_insiste_prejuizo')
+    expect(cols.slice(cols.indexOf('v2_q16_outro'), cols.indexOf('v2_q16_outro') + 2)).toEqual(['v2_q16_outro', 'v2_q16_outro_texto'])
   })
 })

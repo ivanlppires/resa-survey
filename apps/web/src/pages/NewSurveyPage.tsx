@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { db, type LocalSettlement } from '../lib/db'
-import { getSettlements } from '../lib/sync'
+import { getSettlements, syncQuestions, getCurrentCachedVersion } from '../lib/sync'
 
 export default function NewSurveyPage() {
   const navigate = useNavigate()
@@ -10,6 +10,7 @@ export default function NewSurveyPage() {
   const [settlementId, setSettlementId] = useState<number | ''>('')
   const [lotNumber, setLotNumber] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     getSettlements().then(setSettlements).catch(() => {})
@@ -19,6 +20,18 @@ export default function NewSurveyPage() {
     e.preventDefault()
     if (!settlementId) return
     setLoading(true)
+    setError('')
+
+    // Garante o questionário vigente antes de criar (espera pouco: em campo a rede pode estar ruim).
+    if (navigator.onLine) {
+      await Promise.race([syncQuestions(), new Promise((resolve) => setTimeout(resolve, 4000))])
+    }
+    const questionnaireVersion = await getCurrentCachedVersion()
+    if (questionnaireVersion === null) {
+      setError('Conecte-se à internet para baixar o questionário antes da primeira entrevista.')
+      setLoading(false)
+      return
+    }
 
     const settlement = settlements.find((s) => s.id === settlementId)
     const localId = crypto.randomUUID()
@@ -49,6 +62,7 @@ export default function NewSurveyPage() {
       updatedAt: now,
       completedAt: null,
       syncedAt: null,
+      questionnaireVersion,
     })
 
     navigate(`/survey/${localId}`)
@@ -112,6 +126,9 @@ export default function NewSurveyPage() {
               />
             </div>
           </div>
+          {error && (
+            <p role="alert" className="mt-3 px-1 text-[14px] text-apple-red">{error}</p>
+          )}
         </motion.form>
       </main>
 

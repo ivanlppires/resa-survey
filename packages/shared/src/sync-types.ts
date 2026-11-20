@@ -11,6 +11,8 @@ export interface SyncSurveyMetadata {
   createdAt: string
   updatedAt: string
   completedAt: string | null
+  /** Versão do questionário usada na entrevista; ausente em apps antigos. */
+  questionnaireVersion?: number
 }
 
 export interface SyncResponseItem {

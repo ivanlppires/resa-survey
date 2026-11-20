@@ -16,6 +16,7 @@ const survey: LocalSurvey = {
   updatedAt: '2026-07-01T11:00:00.000Z',
   completedAt: '2026-07-01T11:00:00.000Z',
   syncedAt: null,
+  questionnaireVersion: 2,
 }
 
 const responses: LocalResponse[] = [
@@ -24,6 +25,13 @@ const responses: LocalResponse[] = [
 ]
 
 describe('buildSyncPayload', () => {
+  it('envia a versão do questionário de cada entrevista', () => {
+    const payload = buildSyncPayload(
+      [survey, { ...survey, localId: 'uuid-2', questionnaireVersion: 1 }], new Map(), 'ua', '2026-07-01T12:00:00.000Z',
+    )
+    expect(payload.surveys.map((s) => s.metadata.questionnaireVersion)).toEqual([2, 1])
+  })
+
   it('maps localId, settlementId and textValue into the contract', () => {
     const payload = buildSyncPayload([survey], new Map([['uuid-1', responses]]), 'ua', '2026-07-01T12:00:00.000Z')
     expect(payload.surveys).toHaveLength(1)

@@ -15,6 +15,9 @@ export interface PdfQuestion {
   section: string
   options: { value: string; label: string; hasTextInput?: boolean }[] | null
   sortOrder: number
+  /** Linhas de um quadro compartilham groupKey; groupText é o enunciado do quadro. */
+  groupKey?: string | null
+  groupText?: string | null
 }
 
 const MARGIN = 50
@@ -152,7 +155,25 @@ function drawInterview(cur: Cursor, row: CsvSurveyRow, questions: PdfQuestion[],
     cur.rule(GREEN, 1)
     cur.gap(10)
 
-    for (const q of answered) {
+    for (let i = 0; i < answered.length; i++) {
+      const q = answered[i]
+      if (q.groupKey) {
+        // Quadro: enunciado uma vez e as linhas respondidas como "rótulo: resposta".
+        const rows = [q]
+        while (i + 1 < answered.length && answered[i + 1].groupKey === q.groupKey) rows.push(answered[++i])
+        const hLines = wrapText(`${q.number}. ${q.groupText ?? ''}`, CONTENT_W, 9, 'regular')
+        const rowLines = rows.flatMap((r) => {
+          const resp = row.responses.get(r.key)
+          const label = resp?.textValue ? `${r.text} (${resp.textValue})` : r.text
+          return wrapText(`${label}: ${formatAnswer(r, resp?.value)}`, CONTENT_W, 10, 'bold')
+        })
+        cur.ensure(Math.min(hLines.length * 9 * 1.35 + rowLines.length * 10 * 1.35 + 10, 200))
+        cur.lines(hLines, 9, 'regular', GRAY)
+        cur.gap(2)
+        cur.lines(rowLines, 10, 'bold', TEXT)
+        cur.gap(9)
+        continue
+      }
       const resp = row.responses.get(q.key)
       const qLines = wrapText(`${q.number}. ${q.text}`, CONTENT_W, 9, 'regular')
       const aLines = wrapText(formatAnswer(q, resp?.value), CONTENT_W, 10.5, 'bold')

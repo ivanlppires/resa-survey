@@ -49,4 +49,20 @@ describe('syncPayloadSchema', () => {
     const { settlementId: _omit, ...noSettlement } = metadata
     expect(() => syncPayloadSchema.parse({ ...base, surveys: [{ metadata: noSettlement, responses: [] }] })).toThrow()
   })
+
+  it('aceita payload sem questionnaireVersion (app antigo)', () => {
+    const parsed = syncPayloadSchema.parse({ ...base, surveys: [{ metadata, responses: [] }] })
+    expect(parsed.surveys[0].metadata.questionnaireVersion).toBeUndefined()
+  })
+
+  it('aceita questionnaireVersion inteiro positivo', () => {
+    const parsed = syncPayloadSchema.parse({ ...base, surveys: [{ metadata: { ...metadata, questionnaireVersion: 2 }, responses: [] }] })
+    expect(parsed.surveys[0].metadata.questionnaireVersion).toBe(2)
+  })
+
+  it('rejeita questionnaireVersion que não é inteiro positivo', () => {
+    for (const bad of ['2', 0, -1, 1.5]) {
+      expect(() => syncPayloadSchema.parse({ ...base, surveys: [{ metadata: { ...metadata, questionnaireVersion: bad }, responses: [] }] })).toThrow()
+    }
+  })
 })

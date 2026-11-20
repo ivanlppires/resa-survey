@@ -201,4 +201,34 @@ describe('buildSurveyReportPdf', () => {
     expect(content).toContain(encodePdfText('Parte 1 — Socioeconômico'))
     expect(content).not.toContain(encodePdfText('Parte 3 — Ambiental'))
   })
+
+  it('quadro: enunciado uma vez e cada linha respondida como "rótulo: resposta"', () => {
+    const opts = [{ value: 'bom', label: 'Bom' }, { value: 'ruim', label: 'Ruim' }]
+    const grid: PdfQuestion[] = ['Serviço de saúde', 'Energia elétrica', 'Internet'].map((text, i) => ({
+      key: `servico_${i}`, number: 27, text, type: 'single_choice', section: 'socioeconomic', sortOrder: 10 + i,
+      options: opts, groupKey: 'servicos', groupText: 'Como avalia o acesso aos serviços abaixo?',
+    }))
+    const row = makeRow({ responses: new Map([
+      ['servico_0', { value: 'bom', textValue: null }],
+      ['servico_1', { value: 'ruim', textValue: null }],
+    ]) })
+    const content = contentStreams(buildSurveyReportPdf([...QUESTIONS, ...grid], [row], generatedAt))
+    const heading = encodePdfText('27. Como avalia o acesso aos serviços abaixo?')
+    expect(content.split(heading).length - 1).toBe(1)
+    expect(content).toContain(encodePdfText('Serviço de saúde: Bom'))
+    expect(content).toContain(encodePdfText('Energia elétrica: Ruim'))
+    expect(content).not.toContain('Internet') // linha sem resposta não aparece
+    expect(content).not.toContain(encodePdfText('27. Serviço de saúde'))
+  })
+
+  it('quadro: nome digitado na linha "Outro" aparece junto da linha', () => {
+    const grid: PdfQuestion[] = [{
+      key: 'prod_outro', number: 16, text: 'Outro', type: 'multiple_choice', section: 'socioeconomic', sortOrder: 20,
+      options: [{ value: 'consumo', label: 'Consumo da família' }, { value: 'venda', label: 'Venda' }],
+      groupKey: 'produtos', groupText: 'Marque os produtos e o destino',
+    }]
+    const row = makeRow({ responses: new Map([['prod_outro', { value: ['consumo', 'venda'], textValue: 'Café' }]]) })
+    const content = contentStreams(buildSurveyReportPdf(grid, [row], generatedAt))
+    expect(content).toContain(encodePdfText('Outro (Café): Consumo da família, Venda'))
+  })
 })

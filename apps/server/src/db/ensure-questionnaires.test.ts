@@ -19,3 +19,19 @@ describe('versionsToInsert', () => {
     expect(versionsToInsert([1, 2, 3], [1, 2])).toEqual([])
   })
 })
+
+import { incompleteVersions } from './ensure-questionnaires.js'
+
+describe('incompleteVersions', () => {
+  const defined = { 1: 70, 2: 74 }
+  it('nada a avisar quando as contagens batem', () => {
+    expect(incompleteVersions(new Map([[1, 70], [2, 74]]), defined)).toEqual([])
+  })
+  it('aponta versão presente com número de perguntas diferente do código', () => {
+    expect(incompleteVersions(new Map([[1, 70], [2, 1]]), defined)).toEqual([{ version: 2, existing: 1, expected: 74 }])
+    expect(incompleteVersions(new Map([[1, 71], [2, 74]]), defined)).toEqual([{ version: 1, existing: 71, expected: 70 }])
+  })
+  it('ignora versão ausente (será inserida) e versão que o código não conhece', () => {
+    expect(incompleteVersions(new Map([[1, 70], [3, 5]]), defined)).toEqual([])
+  })
+})

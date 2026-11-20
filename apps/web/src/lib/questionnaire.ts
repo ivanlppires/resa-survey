@@ -73,3 +73,10 @@ export function toggleOption(
   if (maxSelections != null && kept.length >= maxSelections) return current
   return [...kept, optValue]
 }
+
+/** Aviso quando não há questionário em cache para criar uma entrevista. */
+export function questionnaireUnavailableMessage(online: boolean): string {
+  return online
+    ? 'Não foi possível baixar o questionário agora. A conexão pode estar lenta — tente novamente em instantes.'
+    : 'Conecte-se à internet para baixar o questionário antes da primeira entrevista.'
+}

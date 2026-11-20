@@ -88,3 +88,16 @@ describe('buildItems', () => {
     expect(buildItems([])).toEqual([])
   })
 })
+
+import { questionnaireUnavailableMessage } from './questionnaire'
+
+describe('questionnaireUnavailableMessage', () => {
+  it('offline: pede para conectar', () => {
+    expect(questionnaireUnavailableMessage(false)).toBe('Conecte-se à internet para baixar o questionário antes da primeira entrevista.')
+  })
+  it('online mas sem conseguir baixar: não diz que está desconectado', () => {
+    const msg = questionnaireUnavailableMessage(true)
+    expect(msg).toBe('Não foi possível baixar o questionário agora. A conexão pode estar lenta — tente novamente em instantes.')
+    expect(msg).not.toContain('Conecte-se')
+  })
+})

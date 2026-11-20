@@ -1,17 +1,29 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { db } from '../db/index.js'
-import { surveys, responses, syncLog } from '../db/schema.js'
-import { eq, desc } from 'drizzle-orm'
+import { surveys, responses, syncLog, questions } from '../db/schema.js'
+import { eq, ne, and, desc, count } from 'drizzle-orm'
 import crypto from 'node:crypto'
 import { syncPayloadSchema } from './sync-schema.js'
-import { deriveQuestionnaireVersion, getCurrentVersion, loadVersionByKey } from '../lib/questionnaire-version.js'
+import { deriveQuestionnaireVersion, foreignResponseCount, getCurrentVersion, loadVersionByKey } from '../lib/questionnaire-version.js'
 
 export async function surveyRoutes(app: FastifyInstance) {
   app.get('/api/surveys', { preHandler: [app.authenticate] }, async (request) => {
     const user = request.user
     if (user.role === 'admin') {
-      return db.select().from(surveys).orderBy(desc(surveys.createdAt))
+      // otherVersionResponses: respostas de perguntas de outra versão que não a
+      // da entrevista (versões misturadas) — o painel sinaliza essas entrevistas.
+      const [rows, foreign] = await Promise.all([
+        db.select().from(surveys).orderBy(desc(surveys.createdAt)),
+        db.select({ surveyId: responses.surveyId, total: count() })
+          .from(responses)
+          .innerJoin(questions, eq(questions.key, responses.questionKey))
+          .innerJoin(surveys, eq(surveys.id, responses.surveyId))
+          .where(ne(questions.version, surveys.questionnaireVersion))
+          .groupBy(responses.surveyId),
+      ])
+      const foreignBySurvey = new Map(foreign.map((f) => [f.surveyId, f.total]))
+      return rows.map((s) => ({ ...s, otherVersionResponses: foreignBySurvey.get(s.id) ?? 0 }))
     }
     return db.select().from(surveys).where(eq(surveys.interviewerId, user.id)).orderBy(desc(surveys.createdAt))
   })
@@ -26,7 +38,10 @@ export async function surveyRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Forbidden' })
     }
     const surveyResponses = await db.select().from(responses).where(eq(responses.surveyId, id))
-    return { ...survey, responses: surveyResponses }
+    const otherVersionResponses = foreignResponseCount(
+      surveyResponses.map((r) => r.questionKey), await loadVersionByKey(db), survey.questionnaireVersion,
+    )
+    return { ...survey, otherVersionResponses, responses: surveyResponses }
   })
 
   app.post('/api/admin/surveys', { preHandler: [app.requireAdmin] }, async (request, reply) => {

@@ -33,7 +33,8 @@ export function parseVersionParam(raw: string | undefined, current: number): num
 /**
  * Versão do questionário de uma entrevista recebida no sync. As chaves das
  * respostas mandam (o app antigo não declara versão); a versão declarada só
- * vale quando nenhuma chave é conhecida; na falta de tudo, v1.
+ * vale quando nenhuma chave é conhecida (e se existir no servidor — senão, a
+ * vigente); na falta de tudo, v1.
  * `mixed` sinaliza respostas de mais de uma versão — a entrevista é gravada
  * mesmo assim, com a versão da maioria (empate → a maior).
  */
@@ -47,7 +48,14 @@ export function deriveQuestionnaireVersion(
     const v = versionByKey.get(key)
     if (v !== undefined) counts.set(v, (counts.get(v) ?? 0) + 1)
   }
-  if (counts.size === 0) return { version: payloadVersion ?? 1, mixed: false }
+  if (counts.size === 0) {
+    // A versão declarada só vale se existir no servidor; senão a entrevista
+    // ficaria invisível no painel (que só lista versões com perguntas).
+    const known = new Set(versionByKey.values())
+    const declared = payloadVersion ?? 1
+    const version = known.size === 0 || known.has(declared) ? declared : Math.max(...known)
+    return { version, mixed: false }
+  }
   const [version] = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]
   return { version, mixed: counts.size > 1 }
 }
@@ -77,4 +85,31 @@ export function toCsvQuestions(
  */
 export function isArchivedVersion(questionVersion: number, current: number): boolean {
   return questionVersion < current
+}
+
+/**
+ * Versão de uma pergunta criada pelo admin: sempre a vigente. Devolve null
+ * para qualquer outra — criar em versão arquivada mudaria o arquivo (e o que
+ * o app antigo baixa); criar em versão futura a tornaria a vigente com uma
+ * única pergunta. Versão nova entra por código (questionnaires/vN.ts).
+ */
+export function resolveNewQuestionVersion(requested: number | undefined, current: number): number | null {
+  if (requested === undefined || requested === current) return current
+  return null
+}
+
+/**
+ * Quantas respostas de uma entrevista são de perguntas de OUTRA versão que não
+ * a da entrevista. Essas respostas ficam gravadas, mas não aparecem no export
+ * da versão da entrevista. Chaves desconhecidas não contam.
+ */
+export function foreignResponseCount(
+  responseKeys: string[],
+  versionByKey: Map<string, number>,
+  surveyVersion: number,
+): number {
+  return responseKeys.filter((k) => {
+    const v = versionByKey.get(k)
+    return v !== undefined && v !== surveyVersion
+  }).length
 }

@@ -59,7 +59,9 @@ curl -H "Authorization: Bearer <TOKEN_COOLIFY>" \
 No boot do container, `docker-entrypoint.sh` executa, nesta ordem:
 
 1. migrações Drizzle (`apps/server/drizzle/`);
-2. seed **somente se o banco estiver vazio** (`SEED_ONLY_IF_EMPTY=1`);
+2. carga do questionário (`dist/db/seed.js`, em **todo** boot desde 20/11/2026): insere por inteiro as versões que
+   ainda não existem no banco e nunca altera nem apaga perguntas; avisa no log se uma versão estiver com número de
+   perguntas diferente do código. O admin inicial só é criado com a tabela de usuários vazia;
 3. start do Fastify.
 
 ## Alterar domínios

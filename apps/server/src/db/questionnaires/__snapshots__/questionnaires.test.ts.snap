@@ -1,0 +1,1805 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`questionário v1 (arquivo) > preserva as 70 perguntas originais 1`] = `
+[
+  {
+    "key": "q01_idade",
+    "number": 1,
+    "options": [
+      {
+        "label": "18 a 20 anos",
+        "value": "18_20",
+      },
+      {
+        "label": "21 a 30 anos",
+        "value": "21_30",
+      },
+      {
+        "label": "31 a 40 anos",
+        "value": "31_40",
+      },
+      {
+        "label": "41 a 50 anos",
+        "value": "41_50",
+      },
+      {
+        "label": "51 a 60 anos",
+        "value": "51_60",
+      },
+      {
+        "label": "Acima de 60 anos",
+        "value": "above_60",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 1,
+    "text": "Idade",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q02_escolaridade",
+    "number": 2,
+    "options": [
+      {
+        "label": "Ensino Fundamental Incompleto",
+        "value": "fund_incompleto",
+      },
+      {
+        "label": "Ensino Fundamental Completo",
+        "value": "fund_completo",
+      },
+      {
+        "label": "Ensino Médio Incompleto",
+        "value": "medio_incompleto",
+      },
+      {
+        "label": "Ensino Médio Completo",
+        "value": "medio_completo",
+      },
+      {
+        "label": "Ensino Superior Incompleto",
+        "value": "superior_incompleto",
+      },
+      {
+        "label": "Ensino Superior Completo",
+        "value": "superior_completo",
+      },
+      {
+        "label": "Especialização",
+        "value": "especializacao",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Curso Técnico",
+        "value": "curso_tecnico",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 2,
+    "text": "Escolaridade",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q03_pessoas_residem",
+    "number": 3,
+    "options": [
+      {
+        "label": "01 a 02",
+        "value": "1_2",
+      },
+      {
+        "label": "03 a 04",
+        "value": "3_4",
+      },
+      {
+        "label": "05 a 06",
+        "value": "5_6",
+      },
+      {
+        "label": "07 a 08",
+        "value": "7_8",
+      },
+      {
+        "label": "Acima de 08",
+        "value": "above_8",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 3,
+    "text": "Quantas pessoas residem na propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q04_pessoas_trabalham",
+    "number": 4,
+    "options": [
+      {
+        "label": "01 a 02",
+        "value": "1_2",
+      },
+      {
+        "label": "03 a 04",
+        "value": "3_4",
+      },
+      {
+        "label": "05 a 06",
+        "value": "5_6",
+      },
+      {
+        "label": "07 a 08",
+        "value": "7_8",
+      },
+      {
+        "label": "Acima de 08",
+        "value": "above_8",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 4,
+    "text": "Quantas dessas pessoas trabalham na propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q05_renda_bruta",
+    "number": 5,
+    "options": [
+      {
+        "label": "Entre 0 a 3 salários mínimos",
+        "value": "0_3_sm",
+      },
+      {
+        "label": "Entre 3 a 6 salários mínimos",
+        "value": "3_6_sm",
+      },
+      {
+        "label": "Entre 6 a 9 salários mínimos",
+        "value": "6_9_sm",
+      },
+      {
+        "label": "Entre 9 a 12 salários mínimos",
+        "value": "9_12_sm",
+      },
+      {
+        "label": "Acima de 12 salários mínimos",
+        "value": "above_12_sm",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 5,
+    "text": "Qual é a renda bruta mensal média gerada pelas atividades da propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q06_renda_apenas_propriedade",
+    "number": 6,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 6,
+    "text": "Toda a renda da família vem apenas da propriedade?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q07_mao_de_obra",
+    "number": 7,
+    "options": [
+      {
+        "label": "Totalmente Familiar",
+        "value": "familiar",
+      },
+      {
+        "label": "Parceria",
+        "value": "parceria",
+      },
+      {
+        "label": "Terceirizada e Familiar",
+        "value": "terceirizada_familiar",
+      },
+      {
+        "label": "Parcialmente Contratada",
+        "value": "parcialmente_contratada",
+      },
+      {
+        "label": "Totalmente Contratada",
+        "value": "totalmente_contratada",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 7,
+    "text": "Quanto à mão de obra na propriedade, ela é?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q08_atividades_economicas",
+    "number": 8,
+    "options": [
+      {
+        "label": "Pecuária de Corte",
+        "value": "pecuaria_corte",
+      },
+      {
+        "label": "Pecuária Leiteira",
+        "value": "pecuaria_leiteira",
+      },
+      {
+        "label": "Agricultura",
+        "value": "agricultura",
+      },
+      {
+        "label": "Nenhuma",
+        "value": "nenhuma",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 8,
+    "text": "Quais as principais atividades econômicas desenvolvidas na propriedade?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q09_produtos_consumo",
+    "number": 9,
+    "options": [
+      {
+        "label": "Mandioca",
+        "value": "mandioca",
+      },
+      {
+        "label": "Hortaliças",
+        "value": "hortalicas",
+      },
+      {
+        "label": "Frango",
+        "value": "frango",
+      },
+      {
+        "label": "Porco",
+        "value": "porco",
+      },
+      {
+        "label": "Gado",
+        "value": "gado",
+      },
+      {
+        "label": "Leite e derivados",
+        "value": "leite_derivados",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Outros",
+        "value": "outros",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 9,
+    "text": "Quais produtos são produzidos para consumo da família?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q10_produtos_comercializacao",
+    "number": 10,
+    "options": [
+      {
+        "label": "Mandioca",
+        "value": "mandioca",
+      },
+      {
+        "label": "Alface",
+        "value": "alface",
+      },
+      {
+        "label": "Rúcula",
+        "value": "rucula",
+      },
+      {
+        "label": "Abóbora",
+        "value": "abobora",
+      },
+      {
+        "label": "Pepino",
+        "value": "pepino",
+      },
+      {
+        "label": "Couve",
+        "value": "couve",
+      },
+      {
+        "label": "Feijão",
+        "value": "feijao",
+      },
+      {
+        "label": "Tomate",
+        "value": "tomate",
+      },
+      {
+        "label": "Repolho",
+        "value": "repolho",
+      },
+      {
+        "label": "Frango",
+        "value": "frango",
+      },
+      {
+        "label": "Porco",
+        "value": "porco",
+      },
+      {
+        "label": "Gado",
+        "value": "gado",
+      },
+      {
+        "label": "Leite e derivados",
+        "value": "leite_derivados",
+      },
+      {
+        "label": "Queijo",
+        "value": "queijo",
+      },
+      {
+        "label": "Requeijão",
+        "value": "requeijao",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Outros",
+        "value": "outros",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 10,
+    "text": "Quais produtos são produzidos para comercialização?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q11_hectares_producao",
+    "number": 11,
+    "options": [
+      {
+        "label": "Até 5 hectares",
+        "value": "ate_5",
+      },
+      {
+        "label": "6 a 10 hectares",
+        "value": "6_10",
+      },
+      {
+        "label": "11 a 20 hectares",
+        "value": "11_20",
+      },
+      {
+        "label": "21 a 30 hectares",
+        "value": "21_30",
+      },
+      {
+        "label": "31 a 40 hectares",
+        "value": "31_40",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Acima de 40 hectares",
+        "value": "above_40",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 11,
+    "text": "Quantos hectares da propriedade são utilizados para produção?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q12_planejamento_atividade",
+    "number": 12,
+    "options": [
+      {
+        "label": "Planeja as atividades com base principalmente na experiência própria",
+        "value": "experiencia",
+      },
+      {
+        "label": "Desenvolve plano de trabalho com objetivos, metas e controles definidos",
+        "value": "plano_trabalho",
+      },
+      {
+        "label": "Desenvolve pesquisa de mercado",
+        "value": "pesquisa_mercado",
+      },
+      {
+        "label": "Não tenho nenhum planejamento das atividades",
+        "value": "nenhum",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Outro",
+        "value": "outro",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 12,
+    "text": "Como planeja a atividade econômica de sua propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q13_controle_custo",
+    "number": 13,
+    "options": [
+      {
+        "label": "Frequentemente",
+        "value": "frequentemente",
+      },
+      {
+        "label": "Às Vezes",
+        "value": "as_vezes",
+      },
+      {
+        "label": "Muito Poucas Vezes",
+        "value": "muito_poucas",
+      },
+      {
+        "label": "Raramente",
+        "value": "raramente",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 13,
+    "text": "É feito o controle de custo das atividades da propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q14_como_controle_custo",
+    "number": 14,
+    "options": [
+      {
+        "label": "Tudo é feito na memória (de cabeça)",
+        "value": "memoria",
+      },
+      {
+        "label": "Anotações em caderno",
+        "value": "caderno",
+      },
+      {
+        "label": "Planilha em papel",
+        "value": "planilha_papel",
+      },
+      {
+        "label": "Planilha eletrônica",
+        "value": "planilha_eletronica",
+      },
+      {
+        "label": "Algum sistema de informação",
+        "value": "sistema",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 14,
+    "text": "Caso faça controle de custo, como é realizado?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q15_organizacao_financeira",
+    "number": 15,
+    "options": [
+      {
+        "label": "Tudo é feito na memória (de cabeça)",
+        "value": "memoria",
+      },
+      {
+        "label": "Anotações em caderno",
+        "value": "caderno",
+      },
+      {
+        "label": "Planilha em papel",
+        "value": "planilha_papel",
+      },
+      {
+        "label": "Planilha eletrônica",
+        "value": "planilha_eletronica",
+      },
+      {
+        "label": "Algum sistema de informação",
+        "value": "sistema",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 15,
+    "text": "Como são organizados os recebimentos, pagamentos e vencimentos da propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q16_crescimento_produtivo",
+    "number": 16,
+    "options": [
+      {
+        "label": "Se manteve igual",
+        "value": "igual",
+      },
+      {
+        "label": "Crescimento de 01% a 10%",
+        "value": "1_10",
+      },
+      {
+        "label": "Crescimento de 11% a 20%",
+        "value": "11_20",
+      },
+      {
+        "label": "Crescimento de 21% a 30%",
+        "value": "21_30",
+      },
+      {
+        "label": "Crescimento de 31% a 40%",
+        "value": "31_40",
+      },
+      {
+        "label": "Crescimento de 41% a 50%",
+        "value": "41_50",
+      },
+      {
+        "label": "Teve diminuição da produção",
+        "value": "diminuicao",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Crescimento acima de 50%",
+        "value": "above_50",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 16,
+    "text": "Qual foi o crescimento da atividade produtiva em sua propriedade nos últimos 05 anos?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q17_administracao",
+    "number": 17,
+    "options": [
+      {
+        "label": "Somente eu",
+        "value": "somente_eu",
+      },
+      {
+        "label": "Eu e minha família",
+        "value": "eu_familia",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 17,
+    "text": "Quem é responsável pela administração da propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q18_apoio_tecnico",
+    "number": 18,
+    "options": [
+      {
+        "label": "Sindicato dos Produtores Rurais",
+        "value": "sindicato",
+      },
+      {
+        "label": "INCRA",
+        "value": "incra",
+      },
+      {
+        "label": "SEBRAE",
+        "value": "sebrae",
+      },
+      {
+        "label": "Banco do Brasil",
+        "value": "banco_brasil",
+      },
+      {
+        "label": "Universidades",
+        "value": "universidades",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 18,
+    "text": "A propriedade recebe apoio ou orientação técnica de alguma instituição?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q19_programa_governamental",
+    "number": 19,
+    "options": [
+      {
+        "label": "PRONAF",
+        "value": "pronaf",
+      },
+      {
+        "label": "PAA",
+        "value": "paa",
+      },
+      {
+        "label": "PNAE",
+        "value": "pnae",
+      },
+      {
+        "label": "Assistência técnica pública (ATER)",
+        "value": "ater",
+      },
+      {
+        "label": "Não participa",
+        "value": "nao_participa",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 19,
+    "text": "A propriedade participa de algum programa governamental?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q20_financiamento_rural",
+    "number": 20,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "label": "Não, mas gostaria",
+        "value": "nao_mas_gostaria",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 20,
+    "text": "Já utilizou financiamento rural?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "conditional": {
+      "dependsOn": "q20_financiamento_rural",
+      "showWhen": [
+        "sim",
+      ],
+    },
+    "key": "q20b_finalidade_financiamento",
+    "number": 20,
+    "options": [
+      {
+        "label": "Custeio",
+        "value": "custeio",
+      },
+      {
+        "label": "Investimento",
+        "value": "investimento",
+      },
+      {
+        "label": "Infraestrutura",
+        "value": "infraestrutura",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 21,
+    "text": "Em caso afirmativo, para qual finalidade?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q21_tecnologia",
+    "number": 21,
+    "options": [
+      {
+        "label": "Máquinas agrícolas",
+        "value": "maquinas",
+      },
+      {
+        "label": "Irrigação",
+        "value": "irrigacao",
+      },
+      {
+        "label": "Aplicativos ou sistemas de gestão",
+        "value": "aplicativos",
+      },
+      {
+        "label": "Nenhuma",
+        "value": "nenhuma",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 22,
+    "text": "A propriedade utiliza algum tipo de pacote de tecnologia?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q22_continuar_rural",
+    "number": 22,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "label": "Não sabe",
+        "value": "nao_sabe",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 23,
+    "text": "Pretende continuar na atividade rural nos próximos anos?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q23_jovens_interesse",
+    "number": 23,
+    "options": [
+      {
+        "label": "Sim, todos",
+        "value": "sim_todos",
+      },
+      {
+        "label": "Alguns",
+        "value": "alguns",
+      },
+      {
+        "label": "Nenhum",
+        "value": "nenhum",
+      },
+      {
+        "label": "Não aplicável",
+        "value": "nao_aplicavel",
+      },
+      {
+        "label": "Sem resposta",
+        "value": "sem_resposta",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 24,
+    "text": "Os jovens membros da família têm interesse em continuar as atividades rurais?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q24_dificuldades",
+    "number": 24,
+    "options": [
+      {
+        "label": "Falta de crédito",
+        "value": "falta_credito",
+      },
+      {
+        "label": "Preços baixos",
+        "value": "precos_baixos",
+      },
+      {
+        "label": "Clima",
+        "value": "clima",
+      },
+      {
+        "label": "Mão de obra",
+        "value": "mao_de_obra",
+      },
+      {
+        "label": "Falta de assistência técnica",
+        "value": "falta_assistencia",
+      },
+    ],
+    "section": "socioeconomic",
+    "sortOrder": 25,
+    "text": "Quais são as maiores dificuldades enfrentadas?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q25_busca_informacoes",
+    "number": 25,
+    "options": [
+      {
+        "label": "Sempre",
+        "value": "sempre",
+      },
+      {
+        "label": "Às vezes",
+        "value": "as_vezes",
+      },
+      {
+        "label": "Raramente",
+        "value": "raramente",
+      },
+      {
+        "label": "Nunca",
+        "value": "nunca",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 26,
+    "text": "Antes de tomar decisões importantes, você costuma buscar informações?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q26_fonte_informacoes",
+    "number": 26,
+    "options": [
+      {
+        "label": "Experiência própria",
+        "value": "experiencia",
+      },
+      {
+        "label": "Família",
+        "value": "familia",
+      },
+      {
+        "label": "Outros produtores",
+        "value": "outros_produtores",
+      },
+      {
+        "label": "Técnicos/assistência técnica",
+        "value": "tecnicos",
+      },
+      {
+        "label": "Internet, rádio ou TV",
+        "value": "midia",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 27,
+    "text": "As informações que mais influenciam suas decisões vêm de:",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q27_capacidade_decisao",
+    "number": 27,
+    "options": [
+      {
+        "label": "Muito boa",
+        "value": "muito_boa",
+      },
+      {
+        "label": "Boa",
+        "value": "boa",
+      },
+      {
+        "label": "Regular",
+        "value": "regular",
+      },
+      {
+        "label": "Ruim",
+        "value": "ruim",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 28,
+    "text": "Como você avalia sua capacidade de tomar boas decisões para a propriedade?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q28_medo_prejuizo",
+    "number": 28,
+    "options": [
+      {
+        "label": "Sim, várias vezes",
+        "value": "sim_varias",
+      },
+      {
+        "label": "Sim, algumas vezes",
+        "value": "sim_algumas",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 29,
+    "text": "Você já deixou de investir ou mudar a produção por medo de prejuízo financeiro?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q29_relacao_vizinhos",
+    "number": 29,
+    "options": [
+      {
+        "label": "Relações muito próximas e de ajuda mútua",
+        "value": "a",
+      },
+      {
+        "label": "Relações cordiais, a ajuda acontece apenas em emergências",
+        "value": "b",
+      },
+      {
+        "label": "Relações de pouca interação entre vizinhos",
+        "value": "c",
+      },
+      {
+        "label": "A comunidade isolada, há pouco contato entre as famílias",
+        "value": "d",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 30,
+    "text": "No dia a dia da comunidade, como você descreveria a relação entre os vizinhos?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q30_relacao_lote",
+    "number": 30,
+    "options": [
+      {
+        "label": "É meu lugar no mundo, onde criei minha família e pretendo ficar. O trabalho na terra é duro, mas me dá satisfação e liberdade.",
+        "value": "a",
+      },
+      {
+        "label": "É uma conquista, mas a vida aqui é muito difícil e, se surgir uma oportunidade melhor na cidade, penso em sair.",
+        "value": "b",
+      },
+      {
+        "label": "Gosto da tranquilidade do lugar, mas o trabalho agrícola é apenas um meio de sobrevivência, não uma escolha de vida.",
+        "value": "c",
+      },
+      {
+        "label": "Tenho orgulho de ser agricultor e acredito que o futuro da minha família está aqui, desde que tenhamos mais apoio.",
+        "value": "d",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 31,
+    "text": "Qual sentimento melhor representa a sua relação com o lote onde você vive?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q31_problema_comunidade",
+    "number": 31,
+    "options": [
+      {
+        "label": "Cada família resolve individualmente, sem envolver a vizinhança",
+        "value": "a",
+      },
+      {
+        "label": "Um grupo de lideranças conhecidas se reúne e decide pelos demais",
+        "value": "b",
+      },
+      {
+        "label": "A comunidade se mobiliza, convoca uma reunião aberta e busca uma solução coletiva",
+        "value": "c",
+      },
+      {
+        "label": "Ficamos na expectativa de que o poder público resolva a situação",
+        "value": "d",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 32,
+    "text": "Quando surge um problema que afeta a comunidade (como falta de água, estrada ou acesso a políticas públicas), qual é a atitude mais comum dos moradores?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q32_ganho_menor_garantido",
+    "number": 32,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 33,
+    "text": "Prefere um ganho menor, mas garantido?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q33_investe_certeza",
+    "number": 33,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 34,
+    "text": "Só investe quando tem quase certeza que dará certo?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q34_prefere_nao_ganhar",
+    "number": 34,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 35,
+    "text": "Prefere não ganhar nada a correr risco de perder?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q35_planeja_mais_um_ano",
+    "number": 35,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 36,
+    "text": "Planeja a produção para mais de um ano?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q36_reserva_financeira",
+    "number": 36,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 37,
+    "text": "Faz reserva financeira para anos ruins?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q37_manter_plantio",
+    "number": 37,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 38,
+    "text": "Prefere manter o que sempre plantou?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q38_desconfia_tecnicas",
+    "number": 38,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 39,
+    "text": "Desconfia de técnicas novas?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q39_observa_vizinhos",
+    "number": 39,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 40,
+    "text": "Observa o que os vizinhos fazem antes de decidir?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q40_conversa_produtores",
+    "number": 40,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 41,
+    "text": "Conversa com outros produtores antes de investir?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q41_previsao_tempo",
+    "number": 41,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 42,
+    "text": "Quando a previsão do tempo é incerta, prefere não arriscar plantio novo?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q42_medo_seca_chuva",
+    "number": 42,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 43,
+    "text": "Já deixou de plantar algo por medo de seca ou excesso de chuva?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q43_reduz_plantio",
+    "number": 43,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 44,
+    "text": "Se o ano anterior foi ruim, reduz o plantio no ano seguinte?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q44_confia_experiencia",
+    "number": 44,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 45,
+    "text": "Confia mais na própria experiência do que em orientação técnica?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q45_evita_emprestimo",
+    "number": 45,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 46,
+    "text": "Evita empréstimo mesmo quando poderia melhorar a produção?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q46_divida_preocupacao",
+    "number": 46,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 47,
+    "text": "Ter dívida causa preocupação e atrapalha decisões do dia a dia?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q47_medo_diversificar",
+    "number": 47,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 48,
+    "text": "Já deixou de diversificar por medo de errar?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q48_depender_uma_cultura",
+    "number": 48,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 49,
+    "text": "Acredita que depender de uma só cultura é arriscado?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q49_anota_gastos",
+    "number": 49,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 50,
+    "text": "Anota gastos e lucros da produção?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q50_compara_precos",
+    "number": 50,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 51,
+    "text": "Compara preços antes de vender?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q51_insiste_prejuizo",
+    "number": 51,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "behavioral",
+    "sortOrder": 52,
+    "text": "Se uma cultura começa a dar prejuízo, insiste antes de abandonar?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q52_irrigacao",
+    "number": 52,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 53,
+    "text": "Você possui algum sistema de irrigação para produção agrícola?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "conditional": {
+      "dependsOn": "q52_irrigacao",
+      "showWhen": [
+        "sim",
+      ],
+    },
+    "key": "q52b_tipo_irrigacao",
+    "number": 52,
+    "options": [
+      {
+        "label": "Gotejamento",
+        "value": "gotejamento",
+      },
+      {
+        "label": "Aspersão",
+        "value": "aspersao",
+      },
+      {
+        "label": "Sulco",
+        "value": "sulco",
+      },
+      {
+        "label": "Manual",
+        "value": "manual",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Outro",
+        "value": "outro",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 54,
+    "text": "Se sim, qual tipo de irrigação é utilizada?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q53_fonte_agua",
+    "number": 53,
+    "options": [
+      {
+        "label": "Poço",
+        "value": "poco",
+      },
+      {
+        "label": "Nascente ou rio",
+        "value": "nascente_rio",
+      },
+      {
+        "label": "Cisterna",
+        "value": "cisterna",
+      },
+      {
+        "label": "Sistema comunitário",
+        "value": "sistema_comunitario",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Outro",
+        "value": "outro",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 55,
+    "text": "Qual é a fonte de água usada para irrigação?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q54_uso_agua",
+    "number": 54,
+    "options": [
+      {
+        "label": "Suficiente",
+        "value": "suficiente",
+      },
+      {
+        "label": "Insuficiente",
+        "value": "insuficiente",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 56,
+    "text": "Considera que o uso da água na propriedade é",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q55_agrotoxicos",
+    "number": 55,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 57,
+    "text": "Utiliza agrotóxicos ou defensivos agrícolas?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "conditional": {
+      "dependsOn": "q55_agrotoxicos",
+      "showWhen": [
+        "sim",
+      ],
+    },
+    "key": "q56_descarte_agrotoxicos",
+    "number": 56,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "label": "Às vezes",
+        "value": "as_vezes",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 58,
+    "text": "Caso utilize, realiza o descarte correto das embalagens?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q57_adubacao_organica",
+    "number": 57,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "label": "Parcialmente",
+        "value": "parcialmente",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 59,
+    "text": "Utiliza adubação orgânica (esterco, compostagem)?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q58_descarte_embalagens",
+    "number": 58,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "label": "Às vezes",
+        "value": "as_vezes",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 60,
+    "text": "Caso utilize, faz o descarte correto das embalagens?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q59_adubo_organico",
+    "number": 59,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 61,
+    "text": "Utiliza adubo orgânico (esterco, compostagem)?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q60_recursos_floresta",
+    "number": 60,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 62,
+    "text": "A família utiliza recursos naturais da floresta?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q61_eventos_climaticos",
+    "number": 61,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 63,
+    "text": "Sua produção foi afetada por eventos climáticos extremos nos últimos 5 anos?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q62_conservacao_solo",
+    "number": 62,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 64,
+    "text": "Utiliza práticas de conservação do solo?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q63_rotacao_culturas",
+    "number": 63,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "label": "Às vezes",
+        "value": "as_vezes",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 65,
+    "text": "Realiza rotação de culturas?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q64_preservacao_ambiental",
+    "number": 64,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "label": "Não sabe informar",
+        "value": "nao_sabe",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 66,
+    "text": "Existe área de preservação ambiental no lote (mata ciliar, reserva legal, nascente protegida)?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q65_plantio_arvores",
+    "number": 65,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 67,
+    "text": "Já realizou plantio de árvores ou recuperação de áreas degradadas?",
+    "type": "yes_no",
+    "version": 1,
+  },
+  {
+    "key": "q66_problemas_ambientais",
+    "number": 66,
+    "options": [
+      {
+        "label": "Erosão",
+        "value": "erosao",
+      },
+      {
+        "label": "Queimadas",
+        "value": "queimadas",
+      },
+      {
+        "label": "Desmatamento",
+        "value": "desmatamento",
+      },
+      {
+        "label": "Assoreamento",
+        "value": "assoreamento",
+      },
+      {
+        "label": "Não observa problemas",
+        "value": "nao_observa",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Outros",
+        "value": "outros",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 68,
+    "text": "Já observou problemas ambientais na propriedade?",
+    "type": "multiple_choice",
+    "version": 1,
+  },
+  {
+    "key": "q67_praticas_sustentaveis",
+    "number": 67,
+    "options": [
+      {
+        "label": "Sim",
+        "value": "sim",
+      },
+      {
+        "label": "Não",
+        "value": "nao",
+      },
+      {
+        "hasTextInput": true,
+        "label": "Já adota práticas sustentáveis",
+        "value": "ja_adota",
+      },
+    ],
+    "section": "environmental",
+    "sortOrder": 69,
+    "text": "Considera importante adotar práticas mais sustentáveis na produção?",
+    "type": "single_choice",
+    "version": 1,
+  },
+  {
+    "key": "q68_percepcao_clima",
+    "number": 68,
+    "scaleMax": 5,
+    "scaleMin": 1,
+    "section": "environmental",
+    "sortOrder": 70,
+    "text": "Em uma escala de 1 a 5, o quanto você percebe que o clima mudou nos últimos 10 anos?",
+    "type": "scale",
+    "version": 1,
+  },
+]
+`;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveQuestionnaireVersion, parseVersionParam } from './questionnaire-version.js'
+import { deriveQuestionnaireVersion, parseVersionParam, resolveExportVersion } from './questionnaire-version.js'
 
 const m = new Map([['q01_idade', 1], ['v2_q01_idade', 2], ['v2_q02_escolaridade', 2]])
 
@@ -44,5 +44,18 @@ describe('parseVersionParam', () => {
   })
   it('valor inválido é null', () => {
     for (const bad of ['abc', '0', '-1', '1.5', '', '2x']) expect(parseVersionParam(bad, 2)).toBeNull()
+  })
+})
+
+describe('resolveExportVersion', () => {
+  it('sem filtro exporta a versão vigente', () => {
+    expect(resolveExportVersion({ current: 2 })).toBe(2)
+  })
+  it('version pedido tem prioridade sobre a vigente', () => {
+    expect(resolveExportVersion({ version: 1, current: 2 })).toBe(1)
+  })
+  it('uma entrevista exporta sempre na versão dela', () => {
+    expect(resolveExportVersion({ version: 1, surveyVersion: 2, current: 2 })).toBe(2)
+    expect(resolveExportVersion({ surveyVersion: 1, current: 2 })).toBe(1)
   })
 })

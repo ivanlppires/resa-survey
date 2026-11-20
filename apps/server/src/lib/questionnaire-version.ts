@@ -1,6 +1,7 @@
 import { max } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { questions } from '../db/schema.js'
+import type { CsvQuestion } from './csv.js'
 
 type Db = PostgresJsDatabase<Record<string, unknown>>
 
@@ -49,4 +50,23 @@ export function deriveQuestionnaireVersion(
   if (counts.size === 0) return { version: payloadVersion ?? 1, mixed: false }
   const [version] = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]
   return { version, mixed: counts.size > 1 }
+}
+
+/**
+ * Versão do questionário de um export: uma entrevista sai sempre na versão
+ * dela; senão vale a versão pedida; sem filtro, a vigente.
+ */
+export function resolveExportVersion(input: { version?: number; surveyVersion?: number; current: number }): number {
+  return input.surveyVersion ?? input.version ?? input.current
+}
+
+/** Colunas de pergunta do CSV/XLSX: uma por pergunta, mais `_texto` quando há alternativa com texto livre. */
+export function toCsvQuestions(
+  rows: { key: string; sortOrder: number; options?: { hasTextInput?: boolean }[] | null }[],
+): CsvQuestion[] {
+  return rows.map((q) => ({
+    key: q.key,
+    sortOrder: q.sortOrder,
+    hasTextOption: (q.options ?? []).some((o) => !!o.hasTextInput),
+  }))
 }

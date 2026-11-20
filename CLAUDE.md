@@ -40,6 +40,10 @@ npm workspaces + Turborepo monorepo with three packages:
 
 Questions are **data, not code**: they live in Postgres, are served by `GET /api/questions`, and cached in IndexedDB via Dexie (`apps/web/src/lib/db.ts`). Conditional questions use `conditional: { dependsOn, showWhen }` evaluated client-side.
 
+Surveys are created and answered entirely against IndexedDB, keyed by a client-generated `localId` (UUID). Sync is **idempotent**: the `localId` is stored server-side as `surveys.client_id` (UNIQUE), so retries never duplicate. `syncCompletedSurveys()` posts all `completed` surveys in one batch to `POST /api/sync` and flips to `synced` **only** the `localId`s the server confirms in `syncedLocalIds` — never mark surveys synced without server confirmation. It is single-flight guarded and auto-triggered on app open and on the `online` event (see `SurveyListPage`). `cleanupStaleSurveys()` touches **only** `synced` surveys (orphaned or older than 7 days) — unsynced field data must never be auto-deleted. Survey status progresses `draft → in_progress → completed → synced`. "Outro (especifique)" free text lives in a separate `textValue` field (Dexie → payload → `responses.text_value`), never encoded into `value`.
+
+Auth state (JWT + user) is in `localStorage` (`resa_token`, `resa_user`). Roles are `admin | interviewer | viewer`; routing in `App.tsx` sends admins to `/admin` (dashboard) and interviewers to the survey list.
+
 ### Questionnaire versions
 
 The questionnaire is **versioned**; design in `docs/plans/2026-11-20-questionario-v2-design.md`.
@@ -50,10 +54,6 @@ The questionnaire is **versioned**; design in `docs/plans/2026-11-20-questionari
 - `GET /api/questions` **without a parameter is pinned to v1** — old cached PWA builds call it and overwrite their whole question cache with the result. The current app uses `?version=current` / `?version=N`. Do not change the unparameterized behaviour.
 - Admin dashboard, question list and exports (CSV/XLSX/PDF, `?version=N`) always show **one version at a time**; questions of archived versions are read-only (409).
 - A grid (matrix) question is stored as one row per line sharing `group_key`/`group_text`; each line is its own response and its own export column. `options[].exclusive` and `max_selections` drive multiple-choice behaviour (`apps/web/src/lib/questionnaire.ts`). The PWA keeps cached questions for every version that still has unsynced local interviews.
-
-Surveys are created and answered entirely against IndexedDB, keyed by a client-generated `localId` (UUID). Sync is **idempotent**: the `localId` is stored server-side as `surveys.client_id` (UNIQUE), so retries never duplicate. `syncCompletedSurveys()` posts all `completed` surveys in one batch to `POST /api/sync` and flips to `synced` **only** the `localId`s the server confirms in `syncedLocalIds` — never mark surveys synced without server confirmation. It is single-flight guarded and auto-triggered on app open and on the `online` event (see `SurveyListPage`). `cleanupStaleSurveys()` touches **only** `synced` surveys (orphaned or older than 7 days) — unsynced field data must never be auto-deleted. Survey status progresses `draft → in_progress → completed → synced`. "Outro (especifique)" free text lives in a separate `textValue` field (Dexie → payload → `responses.text_value`), never encoded into `value`.
-
-Auth state (JWT + user) is in `localStorage` (`resa_token`, `resa_user`). Roles are `admin | interviewer | viewer`; routing in `App.tsx` sends admins to `/admin` (dashboard) and interviewers to the survey list.
 
 ## Conventions and gotchas
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Offline-first survey PWA for the RESA research project (UNEMAT): field interviewers collect a 68-question survey (sections: socioeconomic, behavioral, environmental) in rural settlements without internet, and data syncs to a server when connectivity returns. Docs, UI copy, and question content are in Brazilian Portuguese.
+Offline-first survey PWA for the RESA research project (UNEMAT): field interviewers collect a versioned questionnaire (current: v2, 48 items; sections: socioeconomic, behavioral, environmental) in rural settlements without internet, and data syncs to a server when connectivity returns. Docs, UI copy, and question content are in Brazilian Portuguese.
 
 ## Commands
 
@@ -22,7 +22,7 @@ To run a single workspace's tests: `npm run test -w @resa/server` (or `-w @resa/
 Server/database commands (need `apps/server/.env` with `DATABASE_URL`; `JWT_SECRET` is **required in production** — the server refuses to boot without it when `NODE_ENV=production`; see `.env.example`):
 
 ```bash
-npm run db:seed -w @resa/server      # insert the 68 questions + initial users
+npm run db:seed -w @resa/server      # insert missing questionnaire versions (never deletes) + initial admin on an empty DB
 npm run db:generate -w @resa/server  # generate a Drizzle migration from schema changes
 npm run db:push -w @resa/server      # push schema directly to the database
 npm run db:studio -w @resa/server    # Drizzle Studio
@@ -38,7 +38,18 @@ npm workspaces + Turborepo monorepo with three packages:
 
 ### Offline-first data flow (the core design)
 
-Questions are **data, not code**: they live in Postgres (seeded from `apps/server/src/db/seed.ts`, which is the source of truth for question content — `questionario.txt` at the root is the original text), are served by `GET /api/questions`, and cached in IndexedDB via Dexie (`apps/web/src/lib/db.ts`). Conditional questions use `conditional: { dependsOn, showWhen }` evaluated client-side.
+Questions are **data, not code**: they live in Postgres, are served by `GET /api/questions`, and cached in IndexedDB via Dexie (`apps/web/src/lib/db.ts`). Conditional questions use `conditional: { dependsOn, showWhen }` evaluated client-side.
+
+### Questionnaire versions
+
+The questionnaire is **versioned**; design in `docs/plans/2026-11-20-questionario-v2-design.md`.
+
+- Content lives in `apps/server/src/db/questionnaires/v1.ts` (original 70 rows — **archive, never edit**: it gives meaning to the interviews collected in Aug/2026; source text `questionario.txt`) and `v2.ts` (revised instrument, source `docs/Questionario_Socioeconomico_revisado.docx`). `questions.version` tags each row; v2 keys are prefixed `v2_`, so `responses.question_key` stays unambiguous. The current version is `max(version)`.
+- `surveys.questionnaire_version` records which version an interview used. The server **derives it from the response keys** at sync (`lib/questionnaire-version.ts`); the payload field is only a fallback.
+- `db:seed` / the container entrypoint run `ensureQuestionnaires` on every boot: it inserts whole versions that are missing and **never updates or deletes** questions. A new version = a new `vN.ts` registered in `questionnaires/index.ts`.
+- `GET /api/questions` **without a parameter is pinned to v1** — old cached PWA builds call it and overwrite their whole question cache with the result. The current app uses `?version=current` / `?version=N`. Do not change the unparameterized behaviour.
+- Admin dashboard, question list and exports (CSV/XLSX/PDF, `?version=N`) always show **one version at a time**; questions of archived versions are read-only (409).
+- A grid (matrix) question is stored as one row per line sharing `group_key`/`group_text`; each line is its own response and its own export column. `options[].exclusive` and `max_selections` drive multiple-choice behaviour (`apps/web/src/lib/questionnaire.ts`). The PWA keeps cached questions for every version that still has unsynced local interviews.
 
 Surveys are created and answered entirely against IndexedDB, keyed by a client-generated `localId` (UUID). Sync is **idempotent**: the `localId` is stored server-side as `surveys.client_id` (UNIQUE), so retries never duplicate. `syncCompletedSurveys()` posts all `completed` surveys in one batch to `POST /api/sync` and flips to `synced` **only** the `localId`s the server confirms in `syncedLocalIds` — never mark surveys synced without server confirmation. It is single-flight guarded and auto-triggered on app open and on the `online` event (see `SurveyListPage`). `cleanupStaleSurveys()` touches **only** `synced` surveys (orphaned or older than 7 days) — unsynced field data must never be auto-deleted. Survey status progresses `draft → in_progress → completed → synced`. "Outro (especifique)" free text lives in a separate `textValue` field (Dexie → payload → `responses.text_value`), never encoded into `value`.
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { db, type LocalSettlement } from '../lib/db'
 import { getSettlements, syncQuestions, getCurrentCachedVersion } from '../lib/sync'
+import { questionnaireUnavailableMessage } from '../lib/questionnaire'
 
 export default function NewSurveyPage() {
   const navigate = useNavigate()
@@ -28,7 +29,7 @@ export default function NewSurveyPage() {
     }
     const questionnaireVersion = await getCurrentCachedVersion()
     if (questionnaireVersion === null) {
-      setError('Conecte-se à internet para baixar o questionário antes da primeira entrevista.')
+      setError(questionnaireUnavailableMessage(navigator.onLine))
       setLoading(false)
       return
     }

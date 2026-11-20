@@ -30,6 +30,8 @@ interface SurveyOverview {
   createdAt: string
   completedAt: string | null
   questionnaireVersion: number
+  /** Respostas de perguntas de outra versão que não a da entrevista (versões misturadas). */
+  otherVersionResponses?: number
 }
 
 interface Question {
@@ -498,6 +500,11 @@ function OverviewTab() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 ml-3">
+                    {(s.otherVersionResponses ?? 0) > 0 && (
+                      <span className="text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap bg-apple-orange/12 text-apple-orange">
+                        Versões misturadas
+                      </span>
+                    )}
                     <span className={`text-[12px] font-semibold px-2.5 py-[3px] rounded-full whitespace-nowrap ${
                       s.status === 'synced' ? 'bg-apple-green/12 text-apple-green' : 'bg-apple-blue/12 text-apple-blue'
                     }`}>
@@ -632,6 +639,15 @@ function SurveyDetailSheet({ detail, settlements, users, questions, onClose, onD
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              {(detail.otherVersionResponses ?? 0) > 0 && (
+                <div role="alert" className="bg-apple-orange/10 text-apple-text rounded-xl px-4 py-3">
+                  <p className="text-[14px] font-semibold">Entrevista com versões misturadas</p>
+                  <p className="text-[13px] text-apple-secondary mt-0.5">
+                    {detail.otherVersionResponses} resposta{detail.otherVersionResponses === 1 ? ' é' : 's são'} de outra versão do questionário.
+                    Aparece{detail.otherVersionResponses === 1 ? '' : 'm'} aqui, mas não entra{detail.otherVersionResponses === 1 ? '' : 'm'} na exportação da v{detail.questionnaireVersion}.
+                  </p>
+                </div>
+              )}
               {sortedResponses.length === 0 ? (
                 <p className="text-[14px] text-apple-tertiary text-center py-6">Sem respostas registradas.</p>
               ) : (

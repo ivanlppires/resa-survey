@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import bcrypt from 'bcryptjs'
 import { users } from './schema.js'
-import { ensureQuestionnaires } from './ensure-questionnaires.js'
+import { ensureQuestionnaires, findIncompleteVersions } from './ensure-questionnaires.js'
 import { shouldBootstrapAdmin } from './bootstrap-admin.js'
 
 const client = postgres(process.env.DATABASE_URL!)
@@ -16,6 +16,9 @@ async function seed() {
   console.log(inserted.length > 0
     ? `Questionário: versões inseridas: ${inserted.join(', ')}.`
     : 'Questionário: todas as versões já presentes, nada a inserir.')
+  for (const v of await findIncompleteVersions(db)) {
+    console.warn(`AVISO: questionário v${v.version} tem ${v.existing} perguntas no banco, mas o código define ${v.expected}. A carga não altera versões existentes — confira manualmente.`)
+  }
 
   // Admin inicial: apenas em instalação nova (nenhum usuário no banco).
   const userCount = await db.$count(users)

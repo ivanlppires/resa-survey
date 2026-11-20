@@ -69,3 +69,39 @@ describe('isArchivedVersion', () => {
     expect(isArchivedVersion(1, 1)).toBe(false)
   })
 })
+
+import { resolveNewQuestionVersion, foreignResponseCount } from './questionnaire-version.js'
+
+describe('deriveQuestionnaireVersion — versão declarada inexistente', () => {
+  it('sem respostas e declarando versão que não existe no servidor → vigente', () => {
+    expect(deriveQuestionnaireVersion([], m, 3)).toEqual({ version: 2, mixed: false })
+    expect(deriveQuestionnaireVersion(['desconhecida'], m, 7)).toEqual({ version: 2, mixed: false })
+  })
+  it('sem nenhuma pergunta cadastrada mantém o declarado', () => {
+    expect(deriveQuestionnaireVersion([], new Map(), 3)).toEqual({ version: 3, mixed: false })
+  })
+})
+
+describe('resolveNewQuestionVersion', () => {
+  it('sem versão informada a pergunta nasce na vigente', () => {
+    expect(resolveNewQuestionVersion(undefined, 2)).toBe(2)
+  })
+  it('aceita a vigente informada explicitamente', () => {
+    expect(resolveNewQuestionVersion(2, 2)).toBe(2)
+  })
+  it('recusa versão arquivada (mudaria o arquivo) e versão futura (viraria a vigente)', () => {
+    expect(resolveNewQuestionVersion(1, 2)).toBeNull()
+    expect(resolveNewQuestionVersion(3, 2)).toBeNull()
+  })
+})
+
+describe('foreignResponseCount', () => {
+  it('conta respostas de perguntas de outra versão que não a da entrevista', () => {
+    expect(foreignResponseCount(['q01_idade', 'v2_q01_idade', 'v2_q02_escolaridade'], m, 2)).toBe(1)
+    expect(foreignResponseCount(['q01_idade', 'v2_q01_idade', 'v2_q02_escolaridade'], m, 1)).toBe(2)
+  })
+  it('entrevista coerente e chaves desconhecidas não contam', () => {
+    expect(foreignResponseCount(['v2_q01_idade', 'desconhecida'], m, 2)).toBe(0)
+    expect(foreignResponseCount([], m, 2)).toBe(0)
+  })
+})

@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { db } from '../db/index.js'
 import { questions } from '../db/schema.js'
 import { eq, and, asc } from 'drizzle-orm'
-import { getCurrentVersion, isArchivedVersion, parseVersionParam } from '../lib/questionnaire-version.js'
+import { getCurrentVersion, isArchivedVersion, parseVersionParam, resolveNewQuestionVersion } from '../lib/questionnaire-version.js'
 
 const questionSchema = z.object({
   key: z.string().min(1).max(50),
@@ -59,7 +59,11 @@ export async function questionRoutes(app: FastifyInstance) {
 
   app.post('/api/admin/questions', { preHandler: [app.requireAdmin] }, async (request, reply) => {
     const body = questionSchema.parse(request.body)
-    const [question] = await db.insert(questions).values({ ...body, version: body.version ?? await getCurrentVersion(db) }).returning()
+    const version = resolveNewQuestionVersion(body.version, await getCurrentVersion(db))
+    if (version === null) {
+      return reply.status(400).send({ error: 'Perguntas só podem ser criadas na versão vigente do questionário' })
+    }
+    const [question] = await db.insert(questions).values({ ...body, version }).returning()
     return reply.status(201).send(question)
   })
 

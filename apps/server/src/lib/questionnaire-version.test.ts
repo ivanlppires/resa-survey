@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveQuestionnaireVersion, parseVersionParam, resolveExportVersion } from './questionnaire-version.js'
+import { isArchivedVersion, deriveQuestionnaireVersion, parseVersionParam, resolveExportVersion } from './questionnaire-version.js'
 
 const m = new Map([['q01_idade', 1], ['v2_q01_idade', 2], ['v2_q02_escolaridade', 2]])
 
@@ -57,5 +57,15 @@ describe('resolveExportVersion', () => {
   it('uma entrevista exporta sempre na versão dela', () => {
     expect(resolveExportVersion({ version: 1, surveyVersion: 2, current: 2 })).toBe(2)
     expect(resolveExportVersion({ surveyVersion: 1, current: 2 })).toBe(1)
+  })
+})
+
+describe('isArchivedVersion', () => {
+  it('versões anteriores à vigente são arquivo (somente leitura)', () => {
+    expect(isArchivedVersion(1, 2)).toBe(true)
+  })
+  it('a vigente continua editável', () => {
+    expect(isArchivedVersion(2, 2)).toBe(false)
+    expect(isArchivedVersion(1, 1)).toBe(false)
   })
 })

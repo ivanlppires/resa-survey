@@ -70,3 +70,11 @@ export function toCsvQuestions(
     hasTextOption: (q.options ?? []).some((o) => !!o.hasTextInput),
   }))
 }
+
+/**
+ * Perguntas de versões anteriores à vigente dão sentido a entrevistas já
+ * coletadas: são arquivo e não podem ser editadas nem desativadas.
+ */
+export function isArchivedVersion(questionVersion: number, current: number): boolean {
+  return questionVersion < current
+}

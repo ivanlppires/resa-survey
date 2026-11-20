@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { db, type LocalQuestion, type LocalSurvey } from '../lib/db'
-import { getQuestionsForVersion } from '../lib/sync'
+import { adoptCurrentVersionIfEmpty, getQuestionsForVersion } from '../lib/sync'
 import { computeProgress, isConditionMet, unansweredBySection } from '../lib/progress'
 import { buildItems, toggleOption } from '../lib/questionnaire'
 
@@ -37,9 +37,11 @@ export default function SurveyPage() {
 
   useEffect(() => {
     async function load() {
+      // A versão é decidida uma vez, ao abrir, e vale para toda a sessão da tela.
+      const version = await adoptCurrentVersionIfEmpty(localId!)
       const s = await db.surveys.where('localId').equals(localId!).first()
       setSurvey(s ?? null)
-      const qs = s ? await getQuestionsForVersion(s.questionnaireVersion) : []
+      const qs = version !== null ? await getQuestionsForVersion(version) : []
       setQuestions(qs)
       const existing = await db.responses.where('surveyLocalId').equals(localId!).toArray()
       const values = new Map<string, unknown>()

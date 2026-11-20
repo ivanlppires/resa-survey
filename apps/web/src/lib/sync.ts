@@ -20,20 +20,35 @@ export async function syncQuestions(): Promise<void> {
   if (fetched.length === 0) return
   const current = fetched[0].version
 
-  await db.transaction('rw', db.questions, db.surveys, db.responses, async () => {
+  await db.transaction('rw', db.questions, db.surveys, async () => {
+    // Só o cache de perguntas muda aqui. A versão de uma entrevista nunca é
+    // alterada em segundo plano: ela pode estar aberta na tela com as perguntas
+    // em que começou (ver adoptCurrentVersionIfEmpty).
     const surveys = await db.surveys.toArray()
-    // Rascunho de versão anterior ainda sem nenhuma resposta passa para a
-    // vigente: nada foi coletado nele, então não há o que preservar.
-    for (const s of surveys) {
-      if (s.status === 'synced' || s.status === 'completed' || s.questionnaireVersion >= current) continue
-      const answered = await db.responses.where('surveyLocalId').equals(s.localId).count()
-      if (answered > 0) continue
-      await db.surveys.update(s.id!, { questionnaireVersion: current })
-      s.questionnaireVersion = current
-    }
     const keep = versionsToKeep(surveys, current)
     await db.questions.filter((q) => q.version === current || !keep.has(q.version)).delete()
     await db.questions.bulkPut(fetched)
+  })
+}
+
+/**
+ * Chamada ao ABRIR uma entrevista, antes de carregar as perguntas: um rascunho
+ * de versão anterior que ainda não tem nenhuma resposta passa para a versão
+ * vigente em cache (nada foi coletado nele). Com qualquer resposta, ou já
+ * concluída/sincronizada, a entrevista fica na versão em que começou.
+ * Devolve a versão resultante, ou null se a entrevista não existe.
+ */
+export async function adoptCurrentVersionIfEmpty(localId: string): Promise<number | null> {
+  return db.transaction('rw', db.questions, db.surveys, db.responses, async () => {
+    const survey = await db.surveys.where('localId').equals(localId).first()
+    if (!survey) return null
+    if (survey.status !== 'draft' && survey.status !== 'in_progress') return survey.questionnaireVersion
+    const cached = (await db.questions.orderBy('version').last())?.version ?? null
+    if (cached === null || cached <= survey.questionnaireVersion) return survey.questionnaireVersion
+    const answered = await db.responses.where('surveyLocalId').equals(localId).count()
+    if (answered > 0) return survey.questionnaireVersion
+    await db.surveys.update(survey.id!, { questionnaireVersion: cached })
+    return cached
   })
 }
 

@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { db } from '../db/index.js'
 import { questions } from '../db/schema.js'
 import { eq, and, asc } from 'drizzle-orm'
-import { getCurrentVersion, parseVersionParam } from '../lib/questionnaire-version.js'
+import { getCurrentVersion, isArchivedVersion, parseVersionParam } from '../lib/questionnaire-version.js'
 
 const questionSchema = z.object({
   key: z.string().min(1).max(50),
@@ -37,7 +37,7 @@ const ARCHIVED_ERROR = 'Pergunta de versão arquivada é somente leitura'
 /** Perguntas de versões anteriores à vigente dão sentido a entrevistas já coletadas: não podem mudar. */
 async function isArchived(id: number): Promise<boolean> {
   const [row] = await db.select({ version: questions.version }).from(questions).where(eq(questions.id, id))
-  return !!row && row.version < await getCurrentVersion(db)
+  return !!row && isArchivedVersion(row.version, await getCurrentVersion(db))
 }
 
 export async function questionRoutes(app: FastifyInstance) {

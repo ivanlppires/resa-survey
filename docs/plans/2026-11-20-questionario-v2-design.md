@@ -198,6 +198,10 @@ menos uma linha foi marcada, pois linha vazia = não produz).
   → 1; entrevistas locais sem `questionnaireVersion` → versão inferida das
   chaves das suas respostas (prefixo `v2_` → 2, senão 1); sem respostas →
   versão das perguntas em cache.
+- Rascunho de versão anterior **sem nenhuma resposta** passa para a versão
+  vigente em cache no momento em que é aberto (nada foi coletado nele). A
+  versão de uma entrevista nunca muda em segundo plano nem depois da primeira
+  resposta — ela pode estar aberta na tela com as perguntas em que começou.
 - Rascunhos v1 que existam em celulares continuam abrindo com as perguntas v1,
   podem ser concluídos e sincronizam como v1. Nada local é apagado pela troca.
 - Subtítulos (`subsection`) aparecem como cabeçalho entre os cartões.

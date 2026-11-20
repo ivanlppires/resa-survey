@@ -2,9 +2,9 @@ import 'dotenv/config'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import bcrypt from 'bcryptjs'
-import { eq } from 'drizzle-orm'
 import { users } from './schema.js'
 import { ensureQuestionnaires } from './ensure-questionnaires.js'
+import { shouldBootstrapAdmin } from './bootstrap-admin.js'
 
 const client = postgres(process.env.DATABASE_URL!)
 const db = drizzle({ client })
@@ -17,9 +17,9 @@ async function seed() {
     ? `Questionário: versões inseridas: ${inserted.join(', ')}.`
     : 'Questionário: todas as versões já presentes, nada a inserir.')
 
-  // Seed admin user
-  const existingAdmin = await db.select().from(users).where(eq(users.email, 'admin@resa.unemat.br'))
-  if (existingAdmin.length === 0) {
+  // Admin inicial: apenas em instalação nova (nenhum usuário no banco).
+  const userCount = await db.$count(users)
+  if (shouldBootstrapAdmin(userCount)) {
     const passwordHash = await bcrypt.hash('admin123', 10)
     await db.insert(users).values({
       name: 'Admin RESA',
@@ -27,9 +27,9 @@ async function seed() {
       passwordHash,
       role: 'admin',
     })
-    console.log('Created admin user: admin@resa.unemat.br')
+    console.log('Created admin user: admin@resa.unemat.br (troque a senha no primeiro acesso)')
   } else {
-    console.log('Admin user already exists.')
+    console.log('Usuários já existem; admin inicial não é criado.')
   }
 
   await client.end()

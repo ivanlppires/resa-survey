@@ -113,7 +113,7 @@ versão do Dexie em `apps/web/src/lib/db.ts`.
   `docs/resa-survey-2026-11-05.xlsx` **não** é commitado (contém dados de
   entrevistas); serve de referência local para o teste de regressão do export.
 
-**Transcrição da v2** (73 linhas no banco: 45 perguntas simples + 12 + 6 + 10
+**Transcrição da v2** (74 linhas no banco: 46 perguntas simples, incluindo a 26b, + 12 + 6 + 10
 linhas de quadros):
 
 - Fiel ao documento, inclusive a numeração com saltos (sem 13 e 37) — decisão
@@ -129,11 +129,19 @@ linhas de quadros):
   de negação/ausência em pergunta de múltipla escolha: "Nenhum(a)", "Não
   utiliza", "Não participa", "Não comercializa", "Não se aplica…", "Não observa
   problemas", "Não", "Não tem interesse" e, na 26, as duas "Nunca utilizou…".
-- Sem perguntas condicionais na v2: o documento resolve isso com alternativas
-  ("Não se aplica", "Não utiliza") e mantemos assim.
-- Dois pontos do documento transcritos como estão e a confirmar com a equipe
-  (não bloqueiam): na 46 as faixas "até 2 ha" e "de 2 a 5 ha" se sobrepõem; na
-  26 a mesma lista mistura uso de crédito e finalidade.
+- Uma única pergunta condicional na v2: a 26b (abaixo). No resto, o documento
+  resolve com alternativas ("Não se aplica", "Não utiliza") e mantemos assim.
+- Dois ajustes em relação ao documento, aprovados pelo Ivan em 20/11/2026:
+  - **46** — faixas sem sobreposição nem lacuna: "Não", "Sim, até 2 ha",
+    "Sim, mais de 2 até 5 ha", "Sim, mais de 5 até 10 ha", "Sim, mais de 10 ha",
+    "Não sabe informar".
+  - **26** dividida em duas. **26** "Já utilizou crédito rural?"
+    (`multiple_choice`): "Nunca utilizou e não tem interesse" e "Nunca
+    utilizou, mas gostaria" (ambas exclusivas), "Sim, PRONAF", "Sim, outra
+    linha de crédito". **26b** "Para qual finalidade?" (`multiple_choice`,
+    mesmo `number` 26): "Custeio", "Investimento ou infraestrutura"; aparece só
+    quando a 26 tem alguma alternativa "Sim" (`conditional`, mesmo mecanismo
+    da 20b da v1).
 
 ### 3. Quadros (perguntas 16, 27 e 38)
 
@@ -238,7 +246,7 @@ menos uma linha foi marcada, pois linha vazia = não produz).
 1. Dump manual do banco de produção antes do deploy (além do backup diário).
 2. PR para `master`; deploy pelo Coolify. No boot: migração (colunas novas,
    tudo existente vira v1) e carga da v2.
-3. Conferência em produção: 15 entrevistas em v1, 70 perguntas v1 + 73 v2,
+3. Conferência em produção: 15 entrevistas em v1, 70 perguntas v1 + 74 v2,
    export v1 igual ao de antes, uma entrevista de teste v2 de ponta a ponta
    (apagada depois).
 
